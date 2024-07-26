@@ -5,7 +5,7 @@ def is_valid_float(element: str) -> bool: #para que no reviente todo si no ingre
     except ValueError:
         return False
 
-def verificar_num (element: float|str) -> float:
+def verificar_num (element: float) -> float:
     element = element.replace(",",".") 
     
     while is_valid_float(element) == False: 
@@ -75,7 +75,9 @@ print("____________________\n\nPROGRAMA DE COTIZACIÓN PARA MOLDES DE SOPLADO\n_
 try:
     archivo_precios = open("precios.txt","r")
     archivo_precios.close()
+
 except OSError:
+
     archivo_precios_w = open("precios.txt","w")
     print("No existe un registro de materiales y precios para iniciar la cotización. Usted está por crear uno.")
     
@@ -85,7 +87,7 @@ except OSError:
     char:int = 98
 
     #Aluminio 5083 elemento obligatorio (para mascaras y troqueles)
-    precio_aluminio_5083:float|str = input("Ingrese el precio del Aluminio 5083 (elemento obligatorio para máscaras y troqueles): ") 
+    precio_aluminio_5083:float = input("Ingrese el precio del Aluminio 5083 (elemento obligatorio para máscaras y troqueles): ") 
     precio_aluminio_5083 = verificar_num(precio_aluminio_5083)
     precios_para_archivo ="a,Aluminio 5083,2.8,"+str(precio_aluminio_5083)+"\n"
     precios_para_mostrar.append(("Aluminio 5083","2.8",str(precio_aluminio_5083)))
@@ -120,7 +122,7 @@ archivo_precios = open("precios.txt","r")
 lineas_archivo:list[str] = archivo_precios.readlines()
 archivo_precios.close() #CERRE EL ARCHIVO
 
-dic_materiales:dict[str,tuple[str,float|str,float|str]] = {}
+dic_materiales:dict[str,tuple[str,float,float]] = {}
 
 for linea in lineas_archivo: #requisito que el archivo tenga todo escrito de la forma "a,material,densidad,precio\n" para que funcione
     letra:str = ""
@@ -181,8 +183,8 @@ e) Eliminar un material\n''')
     if tipoCambio == "a" or tipoCambio =="b" or tipoCambio =="c": #no se puede cambiar el nombre y densidad de M
         letra_a_cambiar:str = ""
         cambio_nombre:str = ""
-        cambio_densidad:float|str = 0
-        cambio_precio:float|str = 0
+        cambio_densidad:float = 0
+        cambio_precio:float = 0
 
         if tipoCambio == "a" or tipoCambio == "c":
             letra_a_cambiar = input("¿Que material desea modificar? "+crear_str_opciones(crear_lista_claves(False,False))+": ")
@@ -221,10 +223,10 @@ e) Eliminar un material\n''')
         letra_a_agregar:str = chr(ord(letra_max_ord)+1)        
         
         nombre_a_agregar:str = input("Ingrese el nombre del nuevo material: ")
-        densidad_a_agregar:float|str = input("Ingrese su densidad: ")
+        densidad_a_agregar:float = input("Ingrese su densidad: ")
         densidad_a_agregar = verificar_num(densidad_a_agregar)
 
-        precio_a_agregar:float|str = input("Ingrese su precio: ")
+        precio_a_agregar:float = input("Ingrese su precio: ")
         precio_a_agregar = verificar_num(precio_a_agregar)
 
         dic_materiales[letra_a_agregar] = (nombre_a_agregar,densidad_a_agregar,precio_a_agregar)
@@ -263,12 +265,12 @@ e) Eliminar un material\n''')
 
 #COMIENZO DE INTERROGATORIO
 
-n_moldes:int|str = input("\n-Cantidad de moldes a cotizar:\n") 
+n_moldes:int = input("\n-Cantidad de moldes a cotizar:\n") 
 while n_moldes != "1" and n_moldes != "2":
     n_moldes = input("Solo puede ingresar 1 o 2. Ingrese de nuevo: ")
 n_moldes = int(n_moldes)
 
-n_cavidades:int|str = input("\n-Cantidad de cavidades del molde:\n")
+n_cavidades:int = input("\n-Cantidad de cavidades del molde:\n")
 n_cavidades = verificar_int(n_cavidades)
 
 while n_cavidades<1 or n_cavidades>10:
@@ -290,16 +292,16 @@ if mascaras_troqueles == "si" or mascaras_troqueles == "s":
     costo_al_5083 = tupla_selec[1] * dic_materiales["a"][2]
 
 #características del molde
-altura:float|str = input("\n-Altura del envase (mm):\n")
+altura:float = input("\n-Altura del envase (mm):\n")
 altura = verificar_num (altura)
 
-volumen:float|str = input("\n-Volumen del envase (mm):\n")
+volumen:float = input("\n-Volumen del envase (mm):\n")
 volumen = verificar_num(volumen)
 
-dist_entre_centros:float|str = input("\n-Distancia entre centros que hay entre cavidades: (mm)\n")
+dist_entre_centros:float = input("\n-Distancia entre centros que hay entre cavidades: (mm)\n")
 dist_entre_centros = verificar_num (dist_entre_centros)
     
-ancho_mitad:float|str = input("\n-Ancho por mitad del molde (mm):\n")
+ancho_mitad:float = input("\n-Ancho por mitad del molde (mm):\n")
 ancho_mitad = verificar_num (ancho_mitad)
 
 
@@ -387,7 +389,7 @@ mat_placas_respaldo = verificar_clave(mat_placas_respaldo, lista_claves_sinM)
 
 precio_placas_respaldo:float = ((dist_entre_centros * n_cavidades) + 60) * (altura + 65) * (ancho_mitad - 58) * 0.000001 * 2 * dic_materiales[mat_placas_respaldo][1] * dic_materiales[mat_placas_respaldo][2] * 1.1
 
-lista_mat_costos.append((mat_post_cuerpo,precio_post_cuerpo))
+lista_mat_costos.append((mat_placas_respaldo,precio_placas_respaldo))
 
 
 mat_post_prensa:str = input("\n-Postizo prensamangas"+str_opciones_sinM+"\n")
@@ -402,7 +404,6 @@ costo_mat:float = precio_post_cuerpo + precio_post_cuello + precio_post_fondo + 
 
 #costo de cada material
 
-#ALGUIEN QUE ME EXPLIQUE QUE ESTÁ PASANDO ACA
 dic_costos_mat:dict[str,float] = {} #diccionario que solo contiene los precios de materiales utilizados
 
 for tupla in lista_mat_costos:
@@ -425,20 +426,51 @@ costo_total = costo_mat + gastos_var
 #precio estimado
 mano_obra:float = horas * dic_materiales["M"][2]
 precio:float = round(mano_obra + costo_total) 
+
+#IMPRESIÓN FINAL
     
+info_a_imprimir:str = f'''COSTO TOTAL MATERIA PRIMA: ${costo_total:.2f} US$\n
+Costos de cada material (total: {costo_mat:.2f} US$): \n'''
+
 print(f"\n\n\nCOSTO TOTAL MATERIA PRIMA: ${costo_total:.2f} US$\n") 
 print(f"Costos de cada material (total: {costo_mat:.2f} US$): \n")
 
-#IMPRESIÓN FINAL
 #costos de cada material
 
 for clave,costo in dic_costos_mat.items():
     print(dic_materiales[clave][0]+f": {costo:.2f} US$")
+    info_a_imprimir = info_a_imprimir+dic_materiales[clave][0]+f": {costo:.2f} US$\n"
 
 print(f"\nElementos STD, tornillería, o'rings, etc: {gastos_var} US$")
 
 print(f"\nHORAS DE TRABAJO: {horas}hs\n")
 print(f"PRECIO TOTAL: {precio} US$\n")
+
+info_a_imprimir = info_a_imprimir+f'''\nElementos STD, tornilleria, o'rings, etc: {gastos_var} US$\n
+HORAS DE TRABAJO: {horas}hs\n
+PRECIO TOTAL: {precio} US$\n'''
+
+imprimirSiNo:str = input("¿Desea guardar esta información en un archivo de texto?: ")
+imprimirSiNo = verificar_sino(imprimirSiNo)
+
+if imprimirSiNo == "s" or imprimirSiNo == "si":
+    nombre_archivo:str = input("¿Que nombre desearía colocarle al archivo? (sin extensiones): ")
+    existe_nombre:bool = True
+    #verificamos si el pelotudo que usa esto no le puso el mismo nombre que un archivo existente
+
+    while existe_nombre:
+        try:    
+            ver_archivo = open(nombre_archivo+".txt","r")
+            ver_archivo.close()
+            nombre_archivo = input("Ese archivo ya existe, por favor pruebe con otro nombre: ")
+        
+        except OSError:
+            existe_nombre = False
+
+    archivo_info_molde = open(nombre_archivo+".txt","w")
+    archivo_info_molde.write(info_a_imprimir)
+    archivo_info_molde.close()
+
 respuesta = input("Presione enter para finalizar\n")
 
 #FALTA TEST DE QUE LAS CUENTAS ESTÁN BIEN
