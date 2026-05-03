@@ -1,0 +1,5 @@
+entorno para usar python 
+
+NO USAR (solo para activar uno nuevo)-> python3 -m venv cotizador
+
+source cotizador/bin/activate
