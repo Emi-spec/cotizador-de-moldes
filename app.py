@@ -3,6 +3,8 @@ from PySide6.QtWidgets import (QLabel, #para imprimir texto
     QApplication, QMainWindow, QWidget, QVBoxLayout,
     QFormLayout, QDoubleSpinBox, QPushButton, QMessageBox) 
 
+import cotizador_para_moldes_de_soplado as cotizador
+
 class Ventana(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -19,28 +21,29 @@ class Ventana(QMainWindow):
         # Diccionario de materiales
         self.campos = {}
 
-        materiales = {
-            "Aluminio 5083": 19.0,
-            "Aluminio 6061": 21.5,
-            "Aluminio 7075": 23.5,
-            "Acero Amutit": 7.5,
-            "Acero Especial K": 11.0,
-            "Acero Inoxidable": 16.0,
-            "Acero SAE 4140": 6.0,
-            "Cobre Berilio": 110.0,
-            "Hora molde soplado": 35.0
-        }
+        materiales = cotizador.crear_dic_materiales()
+        # {
+        #     "Aluminio 5083": 19.0,
+        #     "Aluminio 6061": 21.5,
+        #     "Aluminio 7075": 23.5,
+        #     "Acero Amutit": 7.5,
+        #     "Acero Especial K": 11.0,
+        #     "Acero Inoxidable": 16.0,
+        #     "Acero SAE 4140": 6.0,
+        #     "Cobre Berilio": 110.0,
+        #     "Hora molde soplado": 35.0
+        # }
 
         # Crear campos editables
-        for nombre, valor in materiales.items():
+        for letra, caract_material in materiales.items():
             spin = QDoubleSpinBox()
             spin.setRange(0, 1000)
-            spin.setValue(valor)
+            spin.setValue(caract_material[2])
             spin.setSuffix(" US$")
             spin.setDecimals(2)
 
-            form.addRow(nombre + ":", spin)
-            self.campos[nombre] = spin
+            form.addRow(caract_material[0] + ":", spin)
+            self.campos[caract_material[0]] = spin
 
         layout.addLayout(form)
         
@@ -55,8 +58,8 @@ class Ventana(QMainWindow):
 
     # def mostrar_valores(self):
     #     resultado = ""
-    #     for nombre, campo in self.campos.items():
-    #         resultado += f"{nombre}: {campo.value()} US$\n"
+    #     for letra, campo in self.campos.items():
+    #         resultado += f"{letra}: {campo.value()} US$\n"
 
     #     QMessageBox.information(self, "Valores actuales", resultado)
 
@@ -82,8 +85,6 @@ class Ventana(QMainWindow):
 # Pass in sys.argv to allow command line arguments for your app.
 # If you know you won't use command line arguments QApplication([]) works too.
 app = QApplication([])
-
-
 
 
 # Create a Qt widget, which will be our window.

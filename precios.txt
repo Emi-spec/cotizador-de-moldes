@@ -1,9 +1,9 @@
-a,Aluminio 5083,2.8,19
-b,Aluminio 6061,2.8,21.50
-c,Aluminio 7075,2.8,23.50
-d,Acero Amutit,8,7.5
-e,Acero Especial K,8,11
-f,Acero Inoxidable,8,16
-g,Acero SAE 4140,8,6
-h,Cobre Berilio,9,110
-M,mano de obra,0,35
+Aluminio 5083,2.8,19
+Aluminio 6061,2.8,21.50
+Aluminio 7075,2.8,23.50
+Acero Amutit,8,7.5
+Acero Especial K,8,11
+Acero Inoxidable,8,16
+Acero SAE 4140,8,6
+Cobre Berilio,9,110
+mano de obra,0,35
