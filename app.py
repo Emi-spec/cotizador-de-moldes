@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QLabel, #para imprimir texto
     QFormLayout, QDoubleSpinBox, QPushButton, QMessageBox) 
 
 import cotizador_para_moldes_de_soplado as cotizador
+from cotizador_para_moldes_de_soplado import Material
 
 class Ventana(QMainWindow):
     def __init__(self):
@@ -21,7 +22,7 @@ class Ventana(QMainWindow):
         # Diccionario de materiales
         self.campos = {}
 
-        materiales = cotizador.crear_dic_materiales()
+        materiales:list[Material] = cotizador.crear_lista_materiales_a_partir_de("precios.txt")
         # {
         #     "Aluminio 5083": 19.0,
         #     "Aluminio 6061": 21.5,
@@ -35,15 +36,15 @@ class Ventana(QMainWindow):
         # }
 
         # Crear campos editables
-        for letra, caract_material in materiales.items():
+        for  material in materiales:
             spin = QDoubleSpinBox()
             spin.setRange(0, 1000)
-            spin.setValue(caract_material[2])
+            spin.setValue(material[2])
             spin.setSuffix(" US$")
             spin.setDecimals(2)
 
-            form.addRow(caract_material[0] + ":", spin)
-            self.campos[caract_material[0]] = spin
+            form.addRow(material[0] + ":", spin)
+            self.campos[material[0]] = spin
 
         layout.addLayout(form)
         

@@ -1,5 +1,39 @@
 import math
 
+class ManoDeObra:
+    def __init__(self, precio):
+
+        self.assertPrecioValido(precio)
+
+        self.nombre = "mano de obra"
+        self.precio = float(precio)          # precio por unidad (ej: por kg)
+
+    def __str__(self):
+        return f"mano de obra (precio={self.precio})"
+    
+    def assertPrecioValido(self, precio:str):
+
+        self.assertarAtributoNumericoValido(precio, 
+                                            ManoDeObra.PrecioInvalidoDescripcionDeError(precio), 
+                                            ManoDeObra.PrecioInvalidoDescripcionDeError(precio) )
+    
+    def assertarAtributoNumericoValido(self, atributo_en_str:str, descripcion_error_para_no_numerico:str, descripcion_error_para_no_positivo:str):
+        if not(es_float_estricto(atributo_en_str)):
+            raise TypeError(descripcion_error_para_no_numerico)
+
+        atributo_en_str = float(atributo_en_str)
+
+        if atributo_en_str <=0:
+            raise ValueError(descripcion_error_para_no_positivo)
+    
+    def caracteristicasSon(self, nombre_esperado:str, precio_esperado:str):
+        return self.nombre == nombre_esperado and self.precio == precio_esperado
+        
+    @staticmethod
+    def PrecioInvalidoDescripcionDeError(precio:str):
+        return f"La mano de obra tiene un precio inválido de: ${precio}"
+
+
 class Material:
     def __init__(self, nombre, densidad, precio):
 
@@ -69,7 +103,7 @@ def es_float_estricto(cadena):
         return False
 
 
-def crear_dic_materiales_a_partir_de(archivo:str) -> list[Material]:
+def crear_lista_materiales_a_partir_de(archivo:str) -> list[Material]:
     archivo_precios = open(archivo,"r")
     lineas_archivo:list[str] = archivo_precios.readlines()
     archivo_precios.close() #CERRE EL ARCHIVO
@@ -77,27 +111,29 @@ def crear_dic_materiales_a_partir_de(archivo:str) -> list[Material]:
     lista_materiales:list[Material] = []
 
     for linea in lineas_archivo: #requisito que el archivo tenga todo escrito de la forma "a,material,densidad,precio\n" para que funcione
-        letra:str = ""
         cant_comas:int = 0
-        material:str = ""
+        nombre:str = ""
         precio:str = ""
-        densidad:str = ""
+        densidadOPrecio:str = ""
 
         for i in range(len(linea)):
             if linea[i] ==",":
                 cant_comas += 1
 
             elif cant_comas == 0: 
-                material = material+linea[i]
+                nombre = nombre+linea[i]
 
             elif cant_comas == 1:
-                densidad = densidad+linea[i]   
+                densidadOPrecio = densidadOPrecio+linea[i]   
             
             elif cant_comas == 2 and linea[i]!="\n":
                 precio = precio+linea[i]
 
         #print(f"material: {material}, densidad:{densidad}, precio: {precio}")
-        lista_materiales.append(Material(material, densidad, precio))
+        if (nombre == "mano de obra"):
+            lista_materiales.append(ManoDeObra(densidadOPrecio))
+        else:
+            lista_materiales.append(Material(nombre, densidadOPrecio, precio))
 
     return lista_materiales
 
