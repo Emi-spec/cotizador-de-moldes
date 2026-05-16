@@ -128,6 +128,12 @@ class Material(RegistroDeCosto):
     def __str__(self):
         return f"{self.nombre} (densidad={self.densidad}, precio={self.precio})"
     
+    #romper encapsulamiento
+    def densidad_str(self):
+        return str(self.densidad)
+    
+    def precio_str(self):
+        return str(self.precio)
    
     # aserciones
     @staticmethod

@@ -101,8 +101,8 @@ class DialogCrearRegistros(QDialog):
         # si el archivo no existe entonces que pase algo vacío
 
         seccion_nombre_material = QLabel("Material")
-        seccion_densidad_material = QLabel("Densidad")
-        seccion_precio_material = QLabel("Precio")
+        seccion_densidad_material = QLabel("Densidad (Kg/dm3)")
+        seccion_precio_material = QLabel("Precio (US$)")
         
         self.tabla_materiales_registrados = QGroupBox()
         self.tabla_materiales_registrados.setTitle("materiales registrados")
@@ -126,23 +126,23 @@ class DialogCrearRegistros(QDialog):
 
 
         #creo un atributo llamado casilla_material
-        self.casilla_material = QTextEdit()
-        self.casilla_material.setPlaceholderText("Material")
+        self.input_material = QTextEdit()
+        self.input_material.setPlaceholderText("Material")
 
-        self.casilla_densidad = QTextEdit()
-        self.casilla_densidad.setPlaceholderText("Densidad (Kg/dm3)")
+        self.input_densidad = QTextEdit()
+        self.input_densidad.setPlaceholderText("Densidad (Kg/dm3)")
 
-        self.casilla_precio = QTextEdit()
-        self.casilla_precio.setPlaceholderText("Precio (US$)")
+        self.input_precio = QTextEdit()
+        self.input_precio.setPlaceholderText("Precio (US$)")
 
         self.boton_agregar_material = QPushButton("Agregar material")
         self.boton_agregar_material.clicked.connect(self.agregar_material)
 
         # Quitamos el 'self' del paréntesis para que no intente ser el layout principal todavía
         layout_ingresar_material = QHBoxLayout()
-        layout_ingresar_material.addWidget(self.casilla_material)
-        layout_ingresar_material.addWidget(self.casilla_densidad)
-        layout_ingresar_material.addWidget(self.casilla_precio)
+        layout_ingresar_material.addWidget(self.input_material)
+        layout_ingresar_material.addWidget(self.input_densidad)
+        layout_ingresar_material.addWidget(self.input_precio)
         layout_ingresar_material.addWidget(self.boton_agregar_material)
 
         layout_general = QVBoxLayout(self) # Este SI lleva self porque es el principal
@@ -159,12 +159,20 @@ class DialogCrearRegistros(QDialog):
         self.resize(900, 600)
 
     def agregar_material(self):
-        nombre_material:str = self.casilla_material.toPlainText()
-        densidad_material:str = self.casilla_densidad.toPlainText()
-        precio_material:str = self.casilla_precio.toPlainText()
+        nombre_material:str = self.input_material.toPlainText()
+        densidad_material:str = self.input_densidad.toPlainText()
+        precio_material:str = self.input_precio.toPlainText()
 
         try:
-            self.materiales_agregados.append(Material(nombre_material, densidad_material, precio_material))
+            material = Material(nombre_material, densidad_material, precio_material)
+
+            for material_agregado in self.materiales_agregados:
+                if(material_agregado.nombre == nombre_material):
+                    material.lanzarErrorDeRegistrosDeIgualNombre(nombre_material, ARCHIVO_REGISTROS)
+                
+            self.materiales_agregados.append(material)
+            self.mostrarMaterialAgregado()
+
         except (ValueError, TypeError) as descripcion_de_error:
             self.dialogDescripcionDeError = DialogDescripcionDeError(str(descripcion_de_error),self)
             self.dialogDescripcionDeError.exec()
@@ -176,20 +184,33 @@ class DialogCrearRegistros(QDialog):
         #     self.dialogDescripcionDeError = DialogDescripcionDeError(str(descripcion_de_error),self)
         #     self.dialogDescripcionDeError.exec()
 
-        self.xxx()
+        
 
-    def xxx(self):
+    def mostrarMaterialAgregado(self):
+
+        ultima_posicion_lista = len(self.materiales_agregados) -1
+        ultimo_material_agregado = self.materiales_agregados[ultima_posicion_lista]
+
+
+        nombre_del_material = QLabel(ultimo_material_agregado.nombre)
+        self.layout_materiales_registrados.addWidget(nombre_del_material, ultima_posicion_lista+1, 0)
+
+        densidad_del_material = QLabel(str(ultimo_material_agregado.densidad))
+        self.layout_materiales_registrados.addWidget(densidad_del_material, ultima_posicion_lista+1, 1)
+
+        precio_del_material = QLabel(str(ultimo_material_agregado.precio))
+        self.layout_materiales_registrados.addWidget(precio_del_material, ultima_posicion_lista+1, 2)
        
-        for index,registro in enumerate(self.materiales_agregados):
-           #for i in enumerate(range(3)):
-            nombre_del_material = QLabel(registro.nombre)
-            self.layout_materiales_registrados.addWidget(nombre_del_material, index, 0)
+        # for index,registro in enumerate(self.materiales_agregados):
+        #    #for i in enumerate(range(3)):
+        #     nombre_del_material = QLabel(registro.nombre)
+        #     self.layout_materiales_registrados.addWidget(nombre_del_material, index+1, 0)
 
-            densidad_del_material = QLabel(str(registro.densidad))
-            self.layout_materiales_registrados.addWidget(densidad_del_material, index, 1)
+        #     densidad_del_material = QLabel(str(registro.densidad))
+        #     self.layout_materiales_registrados.addWidget(densidad_del_material, index+1, 1)
 
-            precio_del_material = QLabel(str(registro.precio))
-            self.layout_materiales_registrados.addWidget(precio_del_material, index, 2)
+        #     precio_del_material = QLabel(str(registro.precio))
+        #     self.layout_materiales_registrados.addWidget(precio_del_material, index+1, 2)
 
     # def mostrar_valores(self):
     #     resultado = ""

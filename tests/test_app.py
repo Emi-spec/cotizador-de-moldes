@@ -54,32 +54,33 @@ def crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch,
 
     accionSobreDialogYArchivo(dialog, archivo)
 
-def assertarContenidoDeArchivoDespuesDeAgregarMaterial(dialog:DialogCrearRegistros, archivo:str, nombre_material:str, 
-        densidad_material:str, precio_material:str, accionSobreDialog:Callable[[DialogCrearRegistros], None], 
-        contenido_esperado:str):
+def agregarMaterialYRealizarAcciones(dialog:DialogCrearRegistros, nombre_material:str, densidad_material:str, 
+        precio_material:str, accionesSobreDialog:Callable[[DialogCrearRegistros], None]):
     
-    dialog.casilla_material.setText(nombre_material)
-    dialog.casilla_densidad.setText(densidad_material)
-    dialog.casilla_precio.setText(precio_material)
+    dialog.input_material.setText(nombre_material)
+    dialog.input_densidad.setText(densidad_material)
+    dialog.input_precio.setText(precio_material)
 
     dialog.agregar_material()
 
-    accionSobreDialog(dialog)
+    accionesSobreDialog(dialog)
+
+def assertarContenidoDeArchivoDespuesDeAgregarMaterial(dialog:DialogCrearRegistros, archivo:str, nombre_material:str, 
+        densidad_material:str, precio_material:str, accionesSobreDialog:Callable[[DialogCrearRegistros], None], 
+        contenido_esperado:str):
+    
+    agregarMaterialYRealizarAcciones(dialog, nombre_material, densidad_material, precio_material, accionesSobreDialog)
 
     assertarContenidoDeArchivoEsElEsperado(archivo, contenido_esperado)
 
 def assertarArchivoInexistente(archivo:str):
     assert not archivo.exists()
 
-def assertarQueMaterialesNoFueronGuardadosNiRegistradosDespuesDeAgregarMaterial(dialog, archivo, nombre_material, densidad_material, precio_material, 
-        accionSobreDialog:Callable[[DialogCrearRegistros], None], materiales_agregados_esperados:list[Material]):
-    dialog.casilla_material.setText(nombre_material)
-    dialog.casilla_densidad.setText(densidad_material)
-    dialog.casilla_precio.setText(precio_material)
+def verificarQueMaterialesFueronGuardadosPeroNoRegistradosDespuesDeAgregarMaterial(dialog, archivo, nombre_material, 
+                                                                                  densidad_material, precio_material, 
+        accionesSobreDialog:Callable[[DialogCrearRegistros], None], materiales_agregados_esperados:list[Material]):
 
-    dialog.agregar_material()
-
-    accionSobreDialog(dialog)
+    agregarMaterialYRealizarAcciones(dialog, nombre_material, densidad_material, precio_material, accionesSobreDialog)
 
     dialog.materiales_agregados == materiales_agregados_esperados
 
@@ -93,7 +94,7 @@ def verificarQueAlAgregarMaterialYAccionarDialogLosMaterialesAgregadosSean(qtbot
     
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
         lambda dialog,archivo: 
-        assertarQueMaterialesNoFueronGuardadosNiRegistradosDespuesDeAgregarMaterial(dialog, archivo, nombre_material, 
+        verificarQueMaterialesFueronGuardadosPeroNoRegistradosDespuesDeAgregarMaterial(dialog, archivo, nombre_material, 
                                                                                     densidad_material, 
                                                                                     precio_material, accionSobreDialog, 
                                                                                     materiales_guardados_esperados))
@@ -109,7 +110,8 @@ def verificarQueDialogDeErrorDeDialogTengaComoDescripcion(dialog:DialogCrearRegi
     assert descripcion_de_error == descripcion_de_error_esperada
     dialog.dialogDescripcionDeError.cerrar_dialog()
 
-def verificarQueNoSeAgregoMaterial(qtbot, tmpdir, monkeypatch, nombre_material:str, densidad_material:str, precio_material:str, descripcion_de_error_esperada:str):
+def verificarQueNoSeAgregoMaterial(qtbot, tmpdir, monkeypatch, nombre_material:str, densidad_material:str, 
+                                   precio_material:str, descripcion_de_error_esperada:str):
     
     verificarQueAlAgregarMaterialYAccionarDialogLosMaterialesAgregadosSean(qtbot, tmpdir, monkeypatch, nombre_material, 
                                                                            densidad_material, precio_material, 
@@ -188,71 +190,87 @@ def test_05_DialogCrearRegistrosRegistraMasDeUnMaterialEnArchivoInexistente(qtbo
     # assertarContenidoDeArchivoEsElEsperado(archivo, ["Aluminio,3,4.5\n", "Cobre,2,4.6"])
 
 
-def test_06_DialogCrearRegistrosNoMuestraMaterialesSiArchivoInexistente(qtbot, tmpdir, monkeypatch):
 
-    archivo = tmpdir / "archivo_inexistente.txt"
-
-    ventana = crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
-
-    dialog = ventana.dialogParaCrearRegistro
-
-    # crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
-    # lambda dialogo,archivo: 
-    # assertarContenidoDeArchivoDespuesDeIngresarMaterial(dialogo, archivo, nombre_material, 
-    #                                                     densidad_material, precio_material, 
-    #                                                     accionSobreDialog, contenido_esperado))
-
-    labels = dialog.tabla_materiales_registrados.findChildren(QLabel)
-
-    assert len(labels) == 3 #por los de sección
-
-    labels_datos = [l.text() for l in labels]
-
-    assert "Material" in labels_datos
-    assert "Densidad" in labels_datos
-    assert "Precio" in labels_datos
-
-    
-def test_07_DialogCrearRegistrosMuestraMaterialRegistradoEnElArchivo(qtbot, tmpdir, monkeypatch):
-
-    archivo = tmpdir / "archivo_inexistente.txt"
-
-    monkeypatch.setattr(ventana_cotizador,"ARCHIVO_REGISTROS",str(archivo))
-    monkeypatch.setattr(QDialog, "exec", lambda self: QDialog.Accepted)
-
-    ventana = crearVentana(qtbot)
-    ventana.cargar_ventana()
-
-    dialog = ventana.dialogParaCrearRegistro
-
-    dialog.casilla_material.setText("Acero Amutit")
-    dialog.casilla_densidad.setText("3")
-    dialog.casilla_precio.setText("3.4")
-
-    dialog.agregar_material()
-
-    #accionSobreDialog(dialog)
-
+def verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog:DialogCrearRegistros, cantidad_de_materiales_agregados_esperados:int) -> list[str]:
     labels = dialog.tabla_materiales_registrados.findChildren(QLabel)
 
     cantidad_secciones = 3
-    cantidad_materiales_registrados = 1
 
-    assert len(labels) == cantidad_secciones + 3 * cantidad_materiales_registrados #por los de sección y un material
+    assert len(labels) == cantidad_secciones + 3 * cantidad_de_materiales_agregados_esperados #por los de sección y un material
 
     labels_datos = [l.text() for l in labels]
 
     assert "Material" in labels_datos
-    assert "Densidad" in labels_datos
-    assert "Precio" in labels_datos
+    assert "Densidad (Kg/dm3)" in labels_datos
+    assert "Precio (US$)" in labels_datos
 
-    assert "Acero Amutit" in labels_datos
-    assert "3.0" in labels_datos
-    assert "3.4" in labels_datos
+    return labels_datos
 
-    # assertarContenidoDeArchivoEsElEsperado(archivo, "Acero Amutit,3,3.4")
+
+def test_06_DialogCrearRegistrosNoMuestraMaterialesSiArchivoInexistente(qtbot, tmpdir, monkeypatch):
+
+    crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
+                                                     lambda dialog, archivo: 
+                                                     verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, 0))
+
+
+def verificarQueSeMuestranLosMaterialesAgregados(dialog, materiales_agregados_esperados:list[Material]):
+    labels_datos = verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, len(materiales_agregados_esperados))
+
+    for material in materiales_agregados_esperados:
+        assert material.nombre in labels_datos
+        assert material.densidad_str() in labels_datos
+        assert material.precio_str() in labels_datos
+
+
+def agregarMaterialesYVerificarQueFueronGuardadosYMostrados(dialog:DialogCrearRegistros, archivo:str, 
+                                                            materiales_a_agregar:list[Material]):
+
+    for index,material in enumerate(materiales_a_agregar):
+        verificarQueMaterialesFueronGuardadosPeroNoRegistradosDespuesDeAgregarMaterial(dialog, 
+                                                                                   archivo, 
+                                                                                   material.nombre,
+                                                                                   material.densidad_str(),
+                                                                                   material.precio_str(),
+                                                                                   lambda dialog: None, 
+                                                                                   materiales_a_agregar[:index+1])
+        
+        verificarQueSeMuestranLosMaterialesAgregados(dialog,  materiales_a_agregar[:index+1])
+
+
+def test_07_DialogCrearRegistrosMuestraMaterialesAgregados(qtbot, tmpdir, monkeypatch):
+    material_1 = Material("Acero Amutit", "3", "3.4")
+    material_2 = Material("Cobre berilio", "3", "4.5")
+    material_3 = Material("Aluminio 5083", "4", "2.3")
+
+    crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
+                                                     lambda dialog, archivo: 
+        agregarMaterialesYVerificarQueFueronGuardadosYMostrados(dialog, archivo, [material_1, material_2, material_3]))
+
+
+def verificarQueNoSePuedenAgregarDosMaterialesDeMismoNombre(dialog, archivo):
+    material = Material("Acero Amutit", "3", "3.4")
+
+    verificarQueMaterialesFueronGuardadosPeroNoRegistradosDespuesDeAgregarMaterial(dialog, 
+                                                                                   archivo, 
+                                                                                   material.nombre,
+                                                                                   material.densidad_str(),
+                                                                                   material.precio_str(),
+                                                                                   lambda dialog: None, 
+                                                                                   [material])
     
+    verificarQueMaterialesFueronGuardadosPeroNoRegistradosDespuesDeAgregarMaterial(dialog, archivo,
+                                                                                   material.nombre,
+                                                                                   material.densidad_str(),
+                                                                                   material.precio_str(),
+                    lambda dialog: 
+                    verificarQueDialogDeErrorDeDialogTengaComoDescripcion(dialog, 
+                    cotizador.Material.registrosDeIgualNombreDescripcionDeError(material.nombre, archivo)), 
+                                                                        [material])
 
+def test_08_DialogCrearRegistrosNoRegistraDosMaterialesDelMismoNombre(qtbot, tmpdir, monkeypatch):
+    crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
+        lambda dialog, archivo: verificarQueNoSePuedenAgregarDosMaterialesDeMismoNombre(dialog, archivo))
 
 
 # def test_02_AppAbreArchivoVacio(qtbot, tmpdir):
