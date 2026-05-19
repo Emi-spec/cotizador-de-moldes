@@ -1,21 +1,36 @@
 import pytest
 from collections.abc import Callable
 import cotizador_para_moldes_de_soplado as cotizador
-from cotizador_para_moldes_de_soplado import Material
+from cotizador_para_moldes_de_soplado import (Material, ManoDeObra, RegistroDeCosto)
 
 #faltan tests más simples porque alta paja hacerlos
 
 #refactors y coso
 
-def crearArchivoConContenido(tmpdir, nombre_archivo:str, contenido:str) -> str:
+def assertarArchivoInexistente(archivo:str):
+    assert not archivo.exists()
+
+def crearDireccionDeArchivoInexistente(tmpdir, nombre_archivo:str) -> str:
     archivo = tmpdir / nombre_archivo
+
+    return archivo
+
+def crearArchivoConRegistrosAnteriores(tmpdir, nombre_archivo:str, registros_anteriores:list[RegistroDeCosto]):
+    contenido_archivo = pasarListaRegistrosATexto(registros_anteriores)
+
+    archivo = crearArchivoConContenido(tmpdir, nombre_archivo, contenido_archivo)
+
+    return archivo
+
+def crearArchivoConContenido(tmpdir, nombre_archivo:str, contenido:str) -> str:
+    archivo = crearDireccionDeArchivoInexistente(tmpdir, nombre_archivo)
 
     # Escribimos contenido
     archivo.write(contenido)
 
     return archivo
 
-def assertarLevantamientoDeErrorAlEjecutarFuncion(tmpdir, tipo_de_error, funcion:Callable[[], any], descripcion_de_error_esperada:str):
+def assertarLevantamientoDeErrorAlEjecutarFuncion(tipo_de_error, funcion:Callable[[], None], descripcion_de_error_esperada:str):
     
     with pytest.raises(tipo_de_error) as excinfo:
         funcion()
@@ -30,9 +45,8 @@ def assertarLevantamientoErrorAlLeerArchivoInvalidoConDescripcion(tmpdir, nombre
     # Creamos una ruta para el archivo dentro del directorio temporal
     archivo = crearArchivoConContenido(tmpdir, nombre_archivo, contenido)
     
-    assertarLevantamientoDeErrorAlEjecutarFuncion(tmpdir, 
-        tipo_de_error, 
-        lambda: cotizador.crear_lista_materiales_a_partir_de(archivo),
+    assertarLevantamientoDeErrorAlEjecutarFuncion(tipo_de_error, 
+        lambda: cotizador.crear_lista_registros_a_partir_de(archivo),
         descripcion_de_error_esperada)
     
 
@@ -43,6 +57,52 @@ def assertarContenidoDeArchivoEsElEsperado(archivo:str, contenido_esperado:list[
     archivo_modificado.close() #CERRE EL ARCHIVO
 
     assert lineas_archivo == contenido_esperado
+
+def pasarListaRegistrosATexto(lista_registros:list[RegistroDeCosto]) -> str:
+    contenido_archivo_esperado:str = ""
+    
+    if(lista_registros != []):
+        primer_registro:RegistroDeCosto = lista_registros[0]
+
+        if(primer_registro.esMaterial()):
+            contenido_archivo_esperado += f"{primer_registro.nombre},{primer_registro.densidad_str()},{primer_registro.precio_str()}"
+        if(primer_registro.esManoDeObra()):
+            contenido_archivo_esperado += f"{primer_registro.nombre},{primer_registro.precio}"
+
+
+        for registro in lista_registros[1:]:
+            if(registro.esMaterial()):
+                contenido_archivo_esperado +=(f"\n{registro.nombre},{registro.densidad},{registro.precio}")
+            if(registro.esManoDeObra()):
+                contenido_archivo_esperado += (f"\n{registro.nombre},{registro.precio}")
+    
+    return contenido_archivo_esperado
+
+def pasarListaRegistrosALineasArchivo(lista_registros:list[RegistroDeCosto]) -> list[str]:
+    lineas_archivo_esperadas:list[str] = []
+    #breakpoint()
+    if(lista_registros != []):
+        ultimo_registro:RegistroDeCosto = lista_registros[-1]
+
+        for registro in lista_registros[:-1]:
+            if(registro.esMaterial()):
+                lineas_archivo_esperadas.append(f"{registro.nombre},{registro.densidad},{registro.precio}\n")
+            if(registro.esManoDeObra()):
+                lineas_archivo_esperadas.append(f"{registro.nombre},{registro.precio}\n")
+
+        if(ultimo_registro.esMaterial()):
+            lineas_archivo_esperadas.append(f"{ultimo_registro.nombre},{ultimo_registro.densidad_str()},{ultimo_registro.precio_str()}")
+        if(ultimo_registro.esManoDeObra()):
+            lineas_archivo_esperadas.append(f"{ultimo_registro.nombre},{ultimo_registro.precio}")
+    
+    return lineas_archivo_esperadas
+
+def assertarMaterialesRegistradosCorrectamente(archivo:str, registros_esperados:list[Material]):
+
+    contenido_esperado = pasarListaRegistrosALineasArchivo(registros_esperados)
+
+    assertarContenidoDeArchivoEsElEsperado(archivo, contenido_esperado)
+
 
 def assertarQueNoSeRegistroMaterialInvalidoEnArchivoVacio(tmpdir, 
                                             nombre_material:str, densidad_material:str, precio_material:str,
@@ -60,28 +120,29 @@ def assertarQueNoSeRegistroMaterialInvalidoEnArchivo(tmpdir,
     
     archivo = crearArchivoConContenido(tmpdir, nombre_archivo, contenido)
 
-    assertarLevantamientoDeErrorAlEjecutarFuncion(tmpdir, tipo_de_error, 
-        lambda: cotizador.registrar_material(nombre_material, densidad_material, precio_material, archivo),
+    assertarLevantamientoDeErrorAlEjecutarFuncion(tipo_de_error, 
+        lambda: cotizador.registrarMaterial(nombre_material, densidad_material, precio_material, archivo),
         descripcion_de_error_esperada(archivo))
 
     assertarContenidoDeArchivoEsElEsperado(archivo, contenido_final_esperado)
 
 
-def verificarQueMaterialSeHayaRegistradoCorrectamente(tmpdir, nombre_archivo:str, contenido:str, 
-                                                      nombre_material:str, densidad_material:str, precio_material:str,
-                                                      contenido_final_esperado:str):
-    archivo = crearArchivoConContenido(tmpdir, nombre_archivo, contenido)
+def verificarQueMaterialSeHayaRegistradoCorrectamente(tmpdir, nombre_archivo:str, registros_anteriores:list[Material], 
+                                                      material:Material, registros_esperados:list[Material]):
+    
+    archivo = crearArchivoConRegistrosAnteriores(tmpdir, nombre_archivo, registros_anteriores)
 
-    cotizador.registrar_material(nombre_material, densidad_material, precio_material, archivo)
+    cotizador.registrarMaterial(material.nombre, material.densidad_str(), material.precio_str(), archivo)
 
-    assertarContenidoDeArchivoEsElEsperado(archivo, contenido_final_esperado) 
+    assertarMaterialesRegistradosCorrectamente(archivo, registros_esperados)
 
 
-def verificarQueSeRegistrenLosMaterialesCorrectamente(tmpdir, nombre_archivo:str, contenido:str, materiales_esperados:list[tuple[str,float,float]]) -> list[Material]:
+def verificarQueSeRegistrenLosMaterialesCorrectamente(tmpdir, nombre_archivo:str, contenido:str, 
+                                                      materiales_esperados:list[tuple[str,float,float]]) -> list[RegistroDeCosto]:
     
     archivo = crearArchivoConContenido(tmpdir, nombre_archivo, contenido)
 
-    lista_materiales:list[Material] = cotizador.crear_lista_materiales_a_partir_de(archivo)
+    lista_materiales:list[RegistroDeCosto] = cotizador.crear_lista_registros_a_partir_de(archivo)
 
     for indice, carac_material in enumerate(materiales_esperados):
         if(carac_material[0] == "Mano de obra"):
@@ -96,15 +157,22 @@ def assertarLevantamientoErrorMatcheandoDescripcion(tmpdir, nombre_archivo:str, 
 
     with pytest.raises(tipo_de_error, match= f".*{descripcion_de_error_esperada}.* {tmpdir}/{nombre_archivo}") as excinfo:
         #para que el patrón regex matchee debe aparece exactamente el string descripcion_de_error esperada dentro del mensaje
-        cotizador.crear_lista_materiales_a_partir_de(archivo)
+        cotizador.crear_lista_registros_a_partir_de(archivo)
 
+def verificarArchivoInexistenteYLanzamientoDeErrorAlRegistrarListaDeRegistros(tmpdir, lista_registros:list[RegistroDeCosto], descripcion_de_error_esperada:str):
+    archivo = crearDireccionDeArchivoInexistente(tmpdir, "archivo_inexistente.txt")
 
+    assertarLevantamientoDeErrorAlEjecutarFuncion(ValueError, 
+                                    lambda: cotizador.registrarListaRegistros(lista_registros, archivo),
+                        descripcion_de_error_esperada)
+    
+    assertarArchivoInexistente(archivo)
 
 #tests como tal
 
 def test_01_crearMaterialesArchivoInexistente():
     with pytest.raises(FileNotFoundError):
-        cotizador.crear_lista_materiales_a_partir_de("archivoInexistente.txt")
+        cotizador.crear_lista_registros_a_partir_de("archivoInexistente.txt")
 
 def test_02_noCreaMaterialSiNombreVacio(tmpdir):
 
@@ -155,6 +223,9 @@ Acero Especial K,8,11"""
                                             registro_sin_mano_de_obra, 
                                             ValueError, 
                                             "debe haber al menos un registro de mano de obra")
+
+
+#falta noCreaListaSinAlMenosUnMaterial pero alta paja hacerlo, ya está cubierto
 
 def test_06_creaListaDeVariosMateriales(tmpdir):
 
@@ -261,27 +332,38 @@ def test_13_noSePuedeRegistrarUnMaterialConPrecioInvalido(tmpdir):
                                             cotizador.Material.PrecioInvalidoDescripcionDeError("Aluminio", "a"))
 
   
-
-
 def test_14_SeRegistraUnMaterialCorrectamente(tmpdir):
 
-    verificarQueMaterialSeHayaRegistradoCorrectamente(tmpdir, "archivo_vacio.txt", "", "Aluminio", "2", "2.9", ["Aluminio,2,2.9"])  
+    material = Material("Aluminio", "2", "2.9")
+
+    verificarQueMaterialSeHayaRegistradoCorrectamente(tmpdir, "archivo_vacio.txt", [],
+                                                       material, [material])  
 
 
 def test_15_RegistrarUnMaterialNoBorraRegistrosAnteriores(tmpdir):
-    registros_anteriores = """Aluminio,2,4.5
-cobre Berilio,5,4.3"""
+#     registros_anteriores = """Aluminio,2,4.5
+# cobre Berilio,5,4.3"""
 
-    verificarQueMaterialSeHayaRegistradoCorrectamente(tmpdir, "archivo_vacio.txt", registros_anteriores, 
-        "Aluminio 34", "2", "2.9", ["Aluminio,2,4.5\n","cobre Berilio,5,4.3\n","Aluminio 34,2,2.9"])   
+    registro_anterior_1 = Material("Aluminio","2","4.5")
+    registro_anterior_2 = Material("cobre Berilio","5","4.3")
+    
+    material_a_agregar = Material("Acero", "2", "2.9")
+    
+
+    verificarQueMaterialSeHayaRegistradoCorrectamente(tmpdir, "archivo_vacio.txt", 
+                                                      [registro_anterior_1, registro_anterior_2], 
+        material_a_agregar, [registro_anterior_1, registro_anterior_2, material_a_agregar])   
 
 
 def test_16_NoSePuedeRegistrarUnMaterialConNombreRegistradoHabiendoUno(tmpdir):
     registros_anteriores = "Aluminio,2,4.5"
 
+    material = Material("Aluminio", "3", "4.5")
+
     assertarQueNoSeRegistroMaterialInvalidoEnArchivo(tmpdir, "archivo_con_un_material.txt", registros_anteriores,
-                                                    "Aluminio", "3", "4.5", ValueError, 
-                                                    lambda archivo:cotizador.Material.registrosDeIgualNombreDescripcionDeError("Aluminio", archivo),
+                                                    material.nombre, material.densidad_str(), material.precio_str(), 
+                                                    ValueError, 
+                            lambda archivo: material.registrosDeIgualNombreDescripcionDeError(archivo),
                                                     [registros_anteriores])
 
 def test_17_NoSePuedeRegistrarUnMaterialConNombreRegistradoHabiendoVarios(tmpdir):
@@ -290,12 +372,55 @@ cobre berilio,4,3.5
 Aluminio,2,4.5
 barulla,4.3,5,6"""
 
+    material = Material("Aluminio", "3", "5.5")
+
     lista_registros_anteriores:list[str] = ["hojalata,5,6.5\n", "cobre berilio,4,3.5\n", 
                                                 "Aluminio,2,4.5\n", "barulla,4.3,5,6"] 
 
     assertarQueNoSeRegistroMaterialInvalidoEnArchivo(tmpdir, "archivo_con_un_material.txt", registros_anteriores,
-                                                    "Aluminio", "3", "5.5", ValueError, 
-                                                    lambda archivo:cotizador.Material.registrosDeIgualNombreDescripcionDeError("Aluminio", archivo),
+                                                    material.nombre, material.densidad_str(), material.precio_str(), 
+                                                    ValueError, 
+                    lambda archivo:material.registrosDeIgualNombreDescripcionDeError(archivo),
                                                     lista_registros_anteriores)
 
-#el chequeo del Aluminio 5083 lo hago cuando el user de que sí a las máscaras y troqueles y no lo tenga en el registro
+
+
+
+def test_18_NoSePuedeRegistrarEnArchivoListaDeMaterialesSiNoEstaCostoManoDeObra(tmpdir):
+    lista_materiales = [Material("Aluminio","3","3.4"), Material("Cobre","4","5.4"), Material("Plomo","4","5.4")]
+
+    verificarArchivoInexistenteYLanzamientoDeErrorAlRegistrarListaDeRegistros(tmpdir, lista_materiales, cotizador.noSePuedeRegistrarSinCostoManoDeObraDescripcionDeError())
+  
+
+def test_19_NoSePuedeRegistrarEnArchivoListaDeRegistrosSinMateriales(tmpdir):
+    lista_doble_mano_de_obra = [ManoDeObra("3")]
+
+    verificarArchivoInexistenteYLanzamientoDeErrorAlRegistrarListaDeRegistros(tmpdir, 
+                                                                              lista_doble_mano_de_obra, 
+                                                        cotizador.noSePuedeRegistrarSinMaterialesDescripcionDeError())
+
+
+def test_20_NoSePuedeRegistrarEnArchivoVacioListaDeRegistrosSiHayDosCostosDeManoDeObra(tmpdir):
+    lista_registros = [Material("Aluminio","3","3.4"), ManoDeObra("3"), ManoDeObra("4")]
+    
+    verificarArchivoInexistenteYLanzamientoDeErrorAlRegistrarListaDeRegistros(tmpdir, 
+                                                                              lista_registros, 
+                                                  cotizador.noSePuedeRegistrarConDosCostosDeManoDeObraDescripcionDeError())
+    
+def test_21_NoSePuedeRegistrarEnArchivoInexistenteListaDeRegistrosSiHayDosMaterialesDeMismoNombre(tmpdir):
+    lista_registros = [Material("Aluminio","3","3.4"), Material("Aluminio","3.4","5.4") , ManoDeObra("4")]
+    
+    verificarArchivoInexistenteYLanzamientoDeErrorAlRegistrarListaDeRegistros(tmpdir, 
+                                                                              lista_registros, 
+                                            cotizador.noSePuedeRegistrarConMaterialesDeMismoNombreDescripcionDeError())
+    
+def test_22_listaDeRegistrosAceptadaSeRegistraCorrectamenteEnArchivoInexistente(tmpdir):
+    lista_registros_aceptada = [Material("Aluminio","3","3.4"), Material("Cobre","3.4","5.4") , ManoDeObra("4")]
+
+    archivo = crearDireccionDeArchivoInexistente(tmpdir, "archivo_inexistente.txt")
+
+    cotizador.registrarListaRegistros(lista_registros_aceptada, archivo)
+
+    assertarMaterialesRegistradosCorrectamente(archivo, lista_registros_aceptada)
+
+# el chequeo del Aluminio 5083 lo hago cuando el user de que sí a las máscaras y troqueles y no lo tenga en el registro

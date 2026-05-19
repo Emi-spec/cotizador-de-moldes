@@ -1,4 +1,5 @@
 import math
+from collections.abc import Callable
 
 def es_float_estricto(cadena) -> bool:
     try:
@@ -8,7 +9,35 @@ def es_float_estricto(cadena) -> bool:
     except (ValueError, TypeError):
         return False
     
+def lanzarValueError(descripcion_de_error:str):
+    raise ValueError(descripcion_de_error)
 
+def lanzarTypeError(descripcion_de_error:str):
+    raise TypeError(descripcion_de_error)
+
+def debeHaberAlMenosUnRegistroManoDeObraDescripcionDeError(archivo:str) -> str:
+    return f"debe haber al menos un registro de mano de obra en el archivo {archivo}"
+
+def debeHaberAlMenosUnMaterialEnElArchivoDescripcionDeError(archivo:str) -> str:
+    return f"debe haber al menos un material en el archivo {archivo}"
+
+def noSePuedeRegistrarSinCostoManoDeObraDescripcionDeError() -> str:
+    return f"No se puede registrar en el archivo sin el costo de la mano de obra"
+
+def noSePuedeRegistrarSinMaterialesDescripcionDeError() -> str:
+    return f"No se puede registrar en el archivo sin al menos un material"
+
+def noSePuedeRegistrarConDosCostosDeManoDeObraDescripcionDeError() ->str:
+    return f"No se puede registrar en el archivo con dos costos de mano de obra"
+
+def noSePuedeRegistrarConMaterialesDeMismoNombreDescripcionDeError() -> str:
+    return f"No se puede registrar en el archivo con materiales de mismo nombre"
+
+def noSePuedeRegistrarMaterialSiYaHayUnoDelMismoNombreRegistradoEn(nombre_material:str, archivo:str) -> str:
+    return f"No se puede registrar el material {nombre_material} porque ya hay uno del mismo nombre registrado en el archivo {archivo}"
+
+def noSePuedeRegistrarManoDeObraSiYaHayUnaRegistradaEn(archivo:str) -> str:
+    return f"No se puede registrar mano de obra si ya hay una registrada en el archivo {archivo}"
 
 class RegistroDeCosto:
 
@@ -21,12 +50,13 @@ class RegistroDeCosto:
     @staticmethod
     def assertarAtributoNumericoValido(atributo_en_str:str, descripcion_error_para_no_numerico:str, descripcion_error_para_no_positivo:str):
         if not(es_float_estricto(atributo_en_str)):
-            raise TypeError(descripcion_error_para_no_numerico)
+            lanzarTypeError(descripcion_error_para_no_numerico)
+            
 
         atributo_en_str = float(atributo_en_str)
 
         if atributo_en_str <=0:
-            raise ValueError(descripcion_error_para_no_positivo)
+            lanzarValueError(descripcion_error_para_no_positivo)
     
         
     def tieneComoNombre(self, nombre_esperado:str):
@@ -47,14 +77,47 @@ class RegistroDeCosto:
             "Las subclases deben implementar tieneIgualNombreQueManoDeObra"
         )
     
-    def verificarQueNoCompartaNombreCon(self, otroMaterialOManoDeObra:'RegistroDeCosto'):
+    def lanzarErrorConArchivoSiComparteNombreCon(self, otroMaterialOManoDeObra:'RegistroDeCosto', descripcion_de_err):
         raise NotImplementedError(
             "Las subclases deben implementar verificarQueNoCompartaNombreCon"
         )
     
+    def realizarAccionSiComparteNombreCon(self, otroRegistroDeCosto:'RegistroDeCosto', 
+                                          accionDelRegistro:Callable[['RegistroDeCosto'], None]):
+        if(self.tieneIgualNombreQue(otroRegistroDeCosto)):
+            accionDelRegistro(self)
+
+    def lanzarErrorConArchivoSiComparteNombreCon(self, otroRegistroDeCosto:'RegistroDeCosto', archivo:str):
+        self.realizarAccionSiComparteNombreCon(otroRegistroDeCosto, 
+                 lambda registro: registro.lanzarErrorDeRegistrosDeIgualNombreEnArchivo(archivo))
+
+    def lanzarErrorSiComparteNombreEnLaListaParaRegistrarCon(self, otroRegistroDeCosto:'RegistroDeCosto'):
+        self.realizarAccionSiComparteNombreCon(otroRegistroDeCosto, 
+                 lambda registro: registro.lanzarErrorNoSePuedeRegistrarRegistrosDeMismoNombre())
+
+    def lanzarErrorAlRegistrarseSiNombreEs(self, nombre_a_comparar:str, archivo:str):
+        if(self.tieneComoNombre(nombre_a_comparar)):
+            self.lanzarErrorYaEstaRegistradoRegistroDelMismoNombreEn(archivo)
+
+    def esMaterial(self) -> bool:
+        return False
+
+    def esManoDeObra(self) -> bool:
+        return False
+    
     #errores 
+    def lanzarErrorYaEstaRegistradoRegistroDelMismoNombreEn(archivo):
+        raise NotImplementedError(
+            "Las subclases deben implementar lanzarErrorYaEstaRegistradoRegistroDelMismoNombre"
+        )
+
+    def lanzarErrorNoSePuedeRegistrarRegistrosDeMismoNombre(self):
+        raise NotImplementedError(
+            "Las subclases deben implementar lanzarErrorNoSePuedeRegistrarRegistrosDeMismoNombre"
+        )
+
     @staticmethod
-    def lanzarErrorDeRegistrosDeIgualNombre():
+    def lanzarErrorDeRegistrosDeIgualNombreEnArchivo():
         raise NotImplementedError(
             "Las subclases deben implementar lanzarErrorDeRegistrosDeIgualNombre"
         )
@@ -79,8 +142,8 @@ class ManoDeObra(RegistroDeCosto):
     
     #cosas
     @staticmethod
-    def lanzarErrorDeRegistrosDeIgualNombre(nombre_archivo:str):
-        raise ValueError(f"No puede haber dos registros de mano de obra en el archivo {nombre_archivo}")
+    def lanzarErrorDeRegistrosDeIgualNombreEnArchivo(nombre_archivo:str):
+        lanzarValueError(f"No puede haber dos registros de mano de obra en el archivo {nombre_archivo}")
     
     #asserciones
     def assertPrecioValido(self, precio:str):
@@ -105,12 +168,14 @@ class ManoDeObra(RegistroDeCosto):
 
     def esManoDeObra(self):
         return True
-    
-    def verificarQueNoCompartaNombreCon(self, otroRegistroDeCosto:'RegistroDeCosto', archivo:str):
-        if(self.tieneIgualNombreQue(otroRegistroDeCosto)):
-                self.lanzarErrorDeRegistrosDeIgualNombre(archivo)
 
     #mensajes de error    
+    def lanzarErrorYaEstaRegistradoRegistroDelMismoNombreEn(archivo):
+        lanzarValueError(noSePuedeRegistrarManoDeObraSiYaHayUnaRegistradaEn(archivo))
+
+    def lanzarErrorNoSePuedeRegistrarRegistrosDeMismoNombre(self):
+        lanzarValueError(noSePuedeRegistrarConDosCostosDeManoDeObraDescripcionDeError())
+
     @staticmethod
     def PrecioInvalidoDescripcionDeError(precio_invalido:str):
         return f"La mano de obra tiene un precio inválido de: ${precio_invalido}"
@@ -145,7 +210,7 @@ class Material(RegistroDeCosto):
     @staticmethod
     def assertNombreValido(nombre:str, densidad:str, precio:str):
         if not nombre: 
-            raise ValueError(Material.NombreNuloDescripcionDeError(densidad, precio))
+            lanzarValueError(Material.NombreNuloDescripcionDeError(densidad, precio))
 
     @staticmethod
     def assertDensidadValida(nombre:str, densidad:str):
@@ -161,9 +226,11 @@ class Material(RegistroDeCosto):
                                         Material.PrecioInvalidoDescripcionDeError(nombre, precio), 
                                         Material.PrecioInvalidoDescripcionDeError(nombre, precio) )
         
-    def verificarQueNoCompartaNombreCon(self, otroRegistroDeCosto:'RegistroDeCosto', archivo:str):
-        if(self.tieneIgualNombreQue(otroRegistroDeCosto)):
-                self.lanzarErrorDeRegistrosDeIgualNombre(self.nombre, archivo)
+    def verificarQueNombreNoSea(self, nombre:str, archivo:str):
+        if(self.tieneComoNombre(nombre)):
+                self.lanzarErrorDeRegistrosDeIgualNombreEnArchivo(archivo)
+    
+    
        
     def caracteristicasSon(self, nombre_esperado:str, densidad_esperada:str, precio_esperado:str):
         return self.tieneComoNombre(nombre_esperado) and self.densidad == densidad_esperada and self.precio == precio_esperado
@@ -177,18 +244,22 @@ class Material(RegistroDeCosto):
     def tieneIgualNombreQueManoDeObra(self, manoDeObra:ManoDeObra):
         return False
 
-    def esManoDeObra(self):
-        return False
+    def esMaterial(self):
+        return True
 
 
     #mensajes de error
-    @staticmethod
-    def lanzarErrorDeRegistrosDeIgualNombre(nombre_duplicado:str, nombre_archivo:str):
-        raise ValueError(Material.registrosDeIgualNombreDescripcionDeError(nombre_duplicado, nombre_archivo))
+    def lanzarErrorYaEstaRegistradoRegistroDelMismoNombreEn(self, archivo):
+        lanzarValueError(noSePuedeRegistrarMaterialSiYaHayUnoDelMismoNombreRegistradoEn(self.nombre,archivo))
+
+    def lanzarErrorDeRegistrosDeIgualNombreEnArchivo(self, nombre_archivo:str):
+        lanzarValueError(self.registrosDeIgualNombreDescripcionDeError(nombre_archivo))
     
-    @staticmethod
-    def registrosDeIgualNombreDescripcionDeError(nombre_duplicado:str, nombre_archivo:str):
-        return f"Hay más de un material con el nombre {nombre_duplicado} en el archivo {nombre_archivo}."
+    def registrosDeIgualNombreDescripcionDeError(self, nombre_archivo:str):
+        return f"Hay más de un material con el nombre {self.nombre} en el archivo {nombre_archivo}."
+    
+    def lanzarErrorNoSePuedeRegistrarRegistrosDeMismoNombre(self):
+        lanzarValueError(noSePuedeRegistrarConMaterialesDeMismoNombreDescripcionDeError())
 
     @staticmethod
     def NombreNuloDescripcionDeError(densidad:str, precio:str):
@@ -201,29 +272,46 @@ class Material(RegistroDeCosto):
     @staticmethod
     def PrecioInvalidoDescripcionDeError(nombre:str, precio_invalido:str):
         return f"El material {nombre} tiene un precio inválido de: ${precio_invalido}"
+
+
+def verificarValidezDeListaDeRegistros(lista_registros:list[RegistroDeCosto], 
+        comparacionEntreRegistrosYLanzamientoDeError:Callable[[RegistroDeCosto, RegistroDeCosto], None], 
+        descripcion_de_error_para_falta_ManoDeObra:str, descripcion_de_error_para_falta_material:str ):
     
+    cantidad_mano_de_obra = False
+    hay_materiales = False
+
+    for indice, registroDeCosto in enumerate(lista_registros):
+        if(registroDeCosto.esManoDeObra()):
+            cantidad_mano_de_obra = True
+
+        if(registroDeCosto.esMaterial()):
+            hay_materiales = True
+
+        for otroRegistroDeCosto in lista_registros[indice+1:]:
+            comparacionEntreRegistrosYLanzamientoDeError(registroDeCosto, otroRegistroDeCosto)
+
+    if(cantidad_mano_de_obra == False):
+        lanzarValueError(descripcion_de_error_para_falta_ManoDeObra)
+    
+    if(hay_materiales == False):
+        lanzarValueError(descripcion_de_error_para_falta_material)
 
 
-def verificarValidezDeLaLista(lista_materiales:list[Material], archivo:str):
-    hay_registro_mano_de_obra:bool = False
+def verificarValidezDeLaListaDeRegistrosLeidaDeArchivo(lista_registros:list[Material], archivo:str):
 
-    for indice, materialOManoDeObra in enumerate(lista_materiales):
-        if(materialOManoDeObra.esManoDeObra()):
-            hay_registro_mano_de_obra = True
+    verificarValidezDeListaDeRegistros(lista_registros, lambda registroDeCosto, otroRegistroDeCosto: 
+        registroDeCosto.lanzarErrorConArchivoSiComparteNombreCon(otroRegistroDeCosto, archivo),
+          debeHaberAlMenosUnRegistroManoDeObraDescripcionDeError(archivo),
+          debeHaberAlMenosUnMaterialEnElArchivoDescripcionDeError(archivo))
 
-        for otroMaterialOManoDeObra in lista_materiales[indice+1:]:
-            materialOManoDeObra.verificarQueNoCompartaNombreCon(otroMaterialOManoDeObra, archivo)
-           
 
-    if(hay_registro_mano_de_obra == False):
-        raise ValueError(f"debe haber al menos un registro de mano de obra en el archivo {archivo}")
-
-def crear_lista_materiales_a_partir_de(archivo:str) -> list[Material]:
+def crear_lista_registros_a_partir_de(archivo:str) -> list[RegistroDeCosto]:
     archivo_precios = open(archivo,"r")
     lineas_archivo:list[str] = archivo_precios.readlines()
     archivo_precios.close() #CERRE EL ARCHIVO
 
-    lista_materiales:list[Material] = []
+    lista_materiales:list[RegistroDeCosto] = []
 
     for linea in lineas_archivo: #requisito que el archivo tenga todo escrito de la forma "a,material,densidad,precio\n" para que funcione
         cant_comas:int = 0
@@ -251,23 +339,21 @@ def crear_lista_materiales_a_partir_de(archivo:str) -> list[Material]:
             lista_materiales.append(Material(nombre, densidadOPrecio, precio))
 
 
-    verificarValidezDeLaLista(lista_materiales, archivo)
+    verificarValidezDeLaListaDeRegistrosLeidaDeArchivo(lista_materiales, archivo)
 
     return lista_materiales
 
-def registrar_material(nombre:str, densidad:str, precio:str, archivo:str):
+def registrarMaterial(nombre:str, densidad:str, precio:str, archivo:str):
     archivo_modificable = open(archivo,"a")
 
-    Material.assertarCaracteristicasValidas(nombre, densidad, precio)
+    material = Material(nombre, densidad, precio)
 
     archivo_lectura = open(archivo, "r")
     lineas_archivo:list[str] = archivo_lectura.readlines()
 
     for linea in lineas_archivo:
-        caracteristicas_material:str = linea.split(',') 
-        if (caracteristicas_material[0] == nombre):
-            Material.lanzarErrorDeRegistrosDeIgualNombre(nombre, archivo)
-
+        caracteristicas_material:str = linea.split(',')
+        material.verificarQueNombreNoSea(caracteristicas_material[0], archivo) 
 
     if(lineas_archivo == []):
         archivo_modificable.write(f"{nombre},{densidad},{precio}")
@@ -275,6 +361,39 @@ def registrar_material(nombre:str, densidad:str, precio:str, archivo:str):
         archivo_modificable.write(f"\n{nombre},{densidad},{precio}")
     
     archivo_modificable.close()
+
+def registrarManoDeObra(manoDeObra: ManoDeObra, archivo:str):
+    archivo_modificable = open(archivo,"a")
+
+    archivo_lectura = open(archivo, "r")
+    lineas_archivo:list[str] = archivo_lectura.readlines()
+
+    for linea in lineas_archivo:
+        caracteristicas_registro:str = linea.split(',')
+        manoDeObra.lanzarErrorAlRegistrarseSiNombreEs(caracteristicas_registro[0], archivo) 
+
+    if(lineas_archivo == []):
+        archivo_modificable.write(f"{manoDeObra.nombre},{manoDeObra.precio_str()}")
+    else:
+        archivo_modificable.write(f"\n{manoDeObra.nombre},{manoDeObra.precio}")
+    
+    archivo_modificable.close()
+
+
+def registrarListaRegistros(lista_registros:list[RegistroDeCosto], archivo:str):
+    
+    verificarValidezDeListaDeRegistros(lista_registros, lambda registroDeCosto, otroRegistroDeCosto: 
+        registroDeCosto.lanzarErrorSiComparteNombreEnLaListaParaRegistrarCon(otroRegistroDeCosto),
+          noSePuedeRegistrarSinCostoManoDeObraDescripcionDeError(),
+          noSePuedeRegistrarSinMaterialesDescripcionDeError())
+    
+    for registro in lista_registros:
+        if(registro.esMaterial()):
+            registrarMaterial(registro.nombre, registro.densidad_str(), registro.precio_str(), archivo)
+
+        if(registro.esManoDeObra()):
+            registrarManoDeObra(registro, archivo)
+    #for registro in lista_registros:
 
 
 
