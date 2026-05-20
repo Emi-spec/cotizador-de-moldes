@@ -7,7 +7,8 @@ import ventana_cotizador
 from ventana_cotizador import Ventana # Importa tu clase principal
 from ventana_cotizador import DialogCrearRegistros
 import cotizador_para_moldes_de_soplado as cotizador
-from cotizador_para_moldes_de_soplado import Material
+import tests.test_cotizador as test_cot
+from cotizador_para_moldes_de_soplado import (Material, ManoDeObra)
 
 def crearArchivoConContenido(tmpdir, nombre_archivo:str, contenido:str) -> str:
     archivo = tmpdir / nombre_archivo
@@ -154,6 +155,17 @@ def verificarQueNoSeAgregoMaterial(qtbot, tmpdir, monkeypatch, input_nombre:str,
     #                                                                        lambda dialog: 
     #                     verificarQueDialogDeErrorDeDialogTengaComoDescripcion(dialog, descripcion_de_error_esperada), [])
 
+
+def registrarListaMaterialesEInputManoDeObra(dialog, lista_materiales:list[Material], input_costo_de_mano_de_obra:str):
+
+    if(lista_materiales == []): raise ValueError("No se puede ingresar lista vacia en registrarListaMaterialesEInputManoDeObra")
+
+    for material in lista_materiales:
+        agregarMaterial(dialog, material)
+
+    dialog.input_costo_mano_de_obra.setText(input_costo_de_mano_de_obra)
+
+    dialog.guardarTodoYCerrar()
 
 #test data
 def lista_materiales_aceptados() -> list[Material]:
@@ -336,49 +348,104 @@ def test_10_DialogCrearRegistroNoRegistraSinPrecioDeManoDeObraAsignado(qtbot, tm
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
         lambda dialog, archivo: verificarQueDialogLanceErrorAlGuardarMaterialesSinPrecioManoDeObra(dialog, archivo))
 
+ 
 
-# def yyy(dialog, archivo):
-#     agregarMaterial(dialog, Material("Aluminio","3.4","3"))
-#     agregarMaterial(dialog, Material("Acero","3.4","4"))
+def verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo):
+    lista_registros = [Material("Aluminio","3.4","3"), Material("Acero","3.4","4")]
 
-#     dialog.input_costo_mano_de_obra.setText("3")
+    registrarListaMaterialesEInputManoDeObra(dialog, lista_registros, "3")
 
-#     dialog.guardarTodoYCerrar()
+    lista_registros.append(ManoDeObra(3))
 
-#     assertarContenidoDeArchivoEsElEsperado(archivo, ["Aluminio,3.4,3\n","acero,3.4,4\n","mano de obra,3"])
+    assertarContenidoDeArchivoEsElEsperado(archivo, test_cot.pasarListaRegistrosALineasParaArchivo(lista_registros))
 
-# def test_11_DialogCrearRegistroRegistraMaterialesAgregadosYManoDeObra(qtbot, tmpdir, monkeypatch):
-#     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
-#         lambda dialog, archivo: yyy(dialog, archivo))
+def test_11_DialogCrearRegistroRegistraMaterialesAgregadosYManoDeObra(qtbot, tmpdir, monkeypatch):
+    crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
+        lambda dialog, archivo: verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo))
 
 
-#def test_09_DialogCrearRegistrosRegistraSinAgregarMaterial():
+
+def verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(dialog, archivo, 
+                                                                            input_invalido_costo_mano_de_obra: str):
+    lista_registros = [Material("Aluminio","3.4","3"), Material("Acero","3.4","4")]
+
+    registrarListaMaterialesEInputManoDeObra(dialog, lista_registros, input_invalido_costo_mano_de_obra)
+
+    verificarQueDialogDeErrorDeDialogTengaComoDescripcion(dialog, 
+                                        ManoDeObra.PrecioInvalidoDescripcionDeError(input_invalido_costo_mano_de_obra))
+
+    assertarArchivoInexistente(archivo)
+
+def test_12_DialogCrearRegistroNoCreaRegistroLevantaDialogDeErrorAlIngresarCostoDeManoDeObraValueError(qtbot, 
+                                                                                                       tmpdir, monkeypatch):
+    crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
+        lambda dialog, archivo: 
+        verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(dialog, archivo, "-3"))
+
+
+def test_13_DialogCrearRegistroNoCreaRegistroLevantaDialogDeErrorAlIngresarCostoDeManoDeObraTypeError(qtbot, 
+                                                                                                      tmpdir, monkeypatch):
+    crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
+        lambda dialog, archivo: 
+        verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(dialog, archivo, "a"))
     
-# def test_02_AppAbreArchivoVacio(qtbot, tmpdir):
-#     """
-#     qtbot: fixture de pytest-qt para manejar la interfaz.
-#     tmp_path: fixture de pytest para crear archivos temporales.
-#     """
-#     # 1. Crear un archivo vacío en una carpeta temporal
-#     #empty_file = tmp_path / "vacio.txt"
-#     #empty_file.write_text("") 
-#     archivo:str = crearArchivoConContenido(tmpdir, "precios_vacio.txt", "")
 
-#     # 2. Instanciar la ventana y registrar el widget en qtbot
-#     ventana = Ventana()
-#     # ventana.show() # -> incluso al sacarlo se sigue viendo la ventana
-#     qtbot.addWidget(ventana)
+def verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, dialog, archivo):
+    verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo)
+    qtbot.wait(10)
+    verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, 0)
 
-#     # 3. Llamar al método que carga el archivo
-#     # Asumiendo que tu método se llama 'load_file'
-#     # ventana.load_file(str(ventana))
-#     ventana.cargar_lista_registros(archivo)
+    assert dialog.input_material.text() == ""
+    assert dialog.input_densidad.text() == ""
+    assert dialog.input_precio.text() == ""
+    assert dialog.input_costo_mano_de_obra.text() == ""
 
-#     # 4. Verificaciones (Asserts)
-#     # Ejemplo: Si usas un QTextEdit llamado 'editor'
+    assert dialog.accepted 
+
+def test_14_DialogCrearRegistroReseteaLaTablaDeMaterialesAlGuardarTodo(qtbot, tmpdir, monkeypatch):
+    crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
+        lambda dialog, archivo: verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, dialog, archivo))
+
     
-#     # Opcional: verificar que la barra de estado o un label cambió
-#     # assert window.status_label.text() == "Archivo cargado correctamente"
+# def test_15_DialogCrearRegistrosSeAbreAlAbrirArchivoVacio(qtbot, tmpdir):
+    
+#     archivo = crearArchivoConContenido(tmpdir, "archivo_vacio.txt", "")
+
+#     ventana = crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
+
+#     dialog = ventana.dialogParaCrearRegistro
+
+#     accionSobreDialogYArchivo(dialog, archivo)
+    
+    
+    
+    
+    
+
+    # """
+    # qtbot: fixture de pytest-qt para manejar la interfaz.
+    # tmp_path: fixture de pytest para crear archivos temporales.
+    # """
+    # # 1. Crear un archivo vacío en una carpeta temporal
+    # #empty_file = tmp_path / "vacio.txt"
+    # #empty_file.write_text("") 
+    # archivo:str = crearArchivoConContenido(tmpdir, "precios_vacio.txt", "")
+
+    # # 2. Instanciar la ventana y registrar el widget en qtbot
+    # ventana = Ventana()
+    # # ventana.show() # -> incluso al sacarlo se sigue viendo la ventana
+    # qtbot.addWidget(ventana)
+
+    # # 3. Llamar al método que carga el archivo
+    # # Asumiendo que tu método se llama 'load_file'
+    # # ventana.load_file(str(ventana))
+    # ventana.cargar_lista_registros(archivo)
+
+    # # 4. Verificaciones (Asserts)
+    # # Ejemplo: Si usas un QTextEdit llamado 'editor'
+    
+    # # Opcional: verificar que la barra de estado o un label cambió
+    # # assert window.status_label.text() == "Archivo cargado correctamente"
 
 
 #No hacer el scroll porque no hace falta, max 10 materiales 

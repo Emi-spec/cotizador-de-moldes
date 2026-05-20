@@ -1,11 +1,12 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QLabel, #para imprimir texto
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
-    QFormLayout, QDoubleSpinBox, QPushButton, QDialog, QTextEdit, QSizePolicy,
+    QFormLayout, QDoubleSpinBox, QPushButton, QDialog, QApplication, QSizePolicy,
     QLineEdit) 
 
+from collections.abc import Callable
 import cotizador_para_moldes_de_soplado as cotizador
-from cotizador_para_moldes_de_soplado import Material
+from cotizador_para_moldes_de_soplado import (Material, ManoDeObra)
 
 ARCHIVO_REGISTROS = "nada.txt"
 
@@ -102,10 +103,6 @@ class DialogCrearRegistros(QDialog):
         descripcion_error.setStyleSheet("font-weight: bold; margin: 10px;")
 
         #grilla que va mostrando los materiales
-
-        seccion_nombre_material = QLabel("Material")
-        seccion_densidad_material = QLabel("Densidad (Kg/dm3)")
-        seccion_precio_material = QLabel("Precio (US$)")
         
         self.tabla_materiales_registrados = QGroupBox()
         self.tabla_materiales_registrados.setTitle("materiales registrados")
@@ -115,9 +112,16 @@ class DialogCrearRegistros(QDialog):
         self.materiales_agregados:list[Material] = []
 
         self.layout_materiales_registrados = QGridLayout()
-        self.layout_materiales_registrados.addWidget(seccion_nombre_material, 0,0)
-        self.layout_materiales_registrados.addWidget(seccion_densidad_material,0,1)
-        self.layout_materiales_registrados.addWidget(seccion_precio_material,0,2)
+
+        self.agregarSeccionesCaracteristicasMaterial()
+
+        # seccion_nombre_material = QLabel("Material")
+        # seccion_densidad_material = QLabel("Densidad (Kg/dm3)")
+        # seccion_precio_material = QLabel("Precio (US$)")
+
+        # self.layout_materiales_registrados.addWidget(seccion_nombre_material, 0,0)
+        # self.layout_materiales_registrados.addWidget(seccion_densidad_material,0,1)
+        # self.layout_materiales_registrados.addWidget(seccion_precio_material,0,2)
 
         self.tabla_materiales_registrados.setLayout(self.layout_materiales_registrados)
 
@@ -179,36 +183,96 @@ class DialogCrearRegistros(QDialog):
     def noSePuedeGuardarSinUnPrecioDeManoDeObra() -> str:
         return f"No se puede guardar materiales sin un precio asignado a la mano de obra"
 
+    def agregarSeccionesCaracteristicasMaterial(self):
+        seccion_nombre_material = QLabel("Material")
+        seccion_densidad_material = QLabel("Densidad (Kg/dm3)")
+        seccion_precio_material = QLabel("Precio (US$)")
+
+        self.layout_materiales_registrados.addWidget(seccion_nombre_material, 0,0)
+        self.layout_materiales_registrados.addWidget(seccion_densidad_material,0,1)
+        self.layout_materiales_registrados.addWidget(seccion_precio_material,0,2)
+
+    def ejecutarDialogDeErrorConDescripcion(self, descripcion_de_error:str):
+        self.dialogDescripcionDeError = DialogDescripcionDeError(descripcion_de_error,self)
+        self.dialogDescripcionDeError.exec()
+
+    def lanzarDialogDeErrorConDescripcionSiFalla(self, codigoQueAlFallarSeDebeMostrarDialogDeError:Callable[[],None]):
+        try:
+            codigoQueAlFallarSeDebeMostrarDialogDeError()
+
+        except (ValueError, TypeError) as descripcion_de_error:
+            self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
+
+
+    def registrarTodosLosRegistrosDeCostoAgregados(self, input_costo_mano_obra:str, ):
+        self.materiales_agregados.append(ManoDeObra(input_costo_mano_obra))
+        cotizador.registrarListaRegistros(self.materiales_agregados, ARCHIVO_REGISTROS)
+
+        #CHEQUEAR
+        self.limpiar_layout(self.layout_materiales_registrados)
+        self.agregarSeccionesCaracteristicasMaterial()
+
+        self.input_material.clear()
+        self.input_densidad.clear()
+        self.input_precio.clear()
+        self.input_costo_mano_de_obra.clear()
+
+        
+
+
+    #de chatgpt
+    def limpiar_layout(self, layout):
+    # Recorremos el layout desde el último índice hasta el 0
+    # Es importante recorrer al revés para no perder el orden mientras borramos
+    # borra tambien los widgets de los layouts hijos
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                # Borra el widget de la memoria
+                widget.deleteLater()
+        # Procesa todos los eventos pendientes (borrado de widgets, repintado, etc.)
+        QApplication.processEvents()
+
     def guardarTodoYCerrar(self):
 
+        input_costo_mano_obra = self.input_costo_mano_de_obra.text()
+
         if(self.materiales_agregados == []):
-            self.dialogDescripcionDeError = DialogDescripcionDeError(
-                DialogCrearRegistros.noHayMaterialesAgregadosParaRegistrarDescripcionDeError(),self)
-            self.dialogDescripcionDeError.exec()
+            self.ejecutarDialogDeErrorConDescripcion(DialogCrearRegistros.noHayMaterialesAgregadosParaRegistrarDescripcionDeError())
+
+        elif(input_costo_mano_obra == ""):
+            self.ejecutarDialogDeErrorConDescripcion(DialogCrearRegistros.noSePuedeGuardarSinUnPrecioDeManoDeObra())
+
         else:
-            self.dialogDescripcionDeError = DialogDescripcionDeError(
-                DialogCrearRegistros.noSePuedeGuardarSinUnPrecioDeManoDeObra(),self)
-            self.dialogDescripcionDeError.exec()
+            self.lanzarDialogDeErrorConDescripcionSiFalla(lambda: 
+                                            self.registrarTodosLosRegistrosDeCostoAgregados(input_costo_mano_obra))
+
+        self.accept()
+
+
+
+    def agregarMaterialAMaterialesAgregadosYMostrarlo(self, nombre_material:str, densidad_material:str, precio_material:str):
+        material = Material(nombre_material, densidad_material, precio_material)
+
+        for material_agregado in self.materiales_agregados:
+            if(material_agregado.tieneComoNombre(nombre_material)):
+                raise ValueError(DialogCrearRegistros.materialYaRegistradoDeMismoNombreDescripcionDeError(nombre_material))
+                
+        self.materiales_agregados.append(material)
+        self.mostrarMaterialAgregado()
+
 
     def agregar_material(self):
         nombre_material:str = self.input_material.text()
         densidad_material:str = self.input_densidad.text()
         precio_material:str = self.input_precio.text()
-
-        try:
-            material = Material(nombre_material, densidad_material, precio_material)
-
-            for material_agregado in self.materiales_agregados:
-                if(material_agregado.tieneComoNombre(nombre_material)):
-                    raise ValueError(DialogCrearRegistros.materialYaRegistradoDeMismoNombreDescripcionDeError(nombre_material))
-                    
-            self.materiales_agregados.append(material)
-            self.mostrarMaterialAgregado()
-
-        except (ValueError, TypeError) as descripcion_de_error:
-            self.dialogDescripcionDeError = DialogDescripcionDeError(str(descripcion_de_error),self)
-            self.dialogDescripcionDeError.exec()
         
+        self.lanzarDialogDeErrorConDescripcionSiFalla(lambda:
+                self.agregarMaterialAMaterialesAgregadosYMostrarlo(nombre_material, densidad_material, precio_material))
+        
+
+
 
     def mostrarMaterialAgregado(self):
 

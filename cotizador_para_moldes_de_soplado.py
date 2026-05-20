@@ -47,6 +47,16 @@ class RegistroDeCosto:
             "Las subclases deben implementar assertPrecioValido"
         )
     
+    #romper encapsulamiento
+    def precio_str(self) -> str:
+        return str(self.precio)
+    
+    #presentarse como string
+    def espresarseEnFormatoRegistro(self) -> str:
+        raise NotImplementedError(
+            "Las subclases deben implementar espresarseEnFormatoRegistro"
+        )
+    
     @staticmethod
     def assertarAtributoNumericoValido(atributo_en_str:str, descripcion_error_para_no_numerico:str, descripcion_error_para_no_positivo:str):
         if not(es_float_estricto(atributo_en_str)):
@@ -140,6 +150,10 @@ class ManoDeObra(RegistroDeCosto):
     def __str__(self):
         return f"{self.nombre} (precio={self.precio})"
     
+    #presentarse como string
+    def espresarseEnFormatoRegistro(self) -> str:
+        return f"{self.nombre},{self.precio_str()}"
+    
     #cosas
     @staticmethod
     def lanzarErrorDeRegistrosDeIgualNombreEnArchivo(nombre_archivo:str):
@@ -194,11 +208,13 @@ class Material(RegistroDeCosto):
         return f"{self.nombre} (densidad={self.densidad}, precio={self.precio})"
     
     #romper encapsulamiento
-    def densidad_str(self):
+    def densidad_str(self) -> str:
         return str(self.densidad)
     
-    def precio_str(self):
-        return str(self.precio)
+    
+    #espresarse en string
+    def espresarseEnFormatoRegistro(self) -> str:
+        return f"{self.nombre},{self.densidad_str()},{self.precio_str()}"
    
     # aserciones
     @staticmethod
@@ -343,26 +359,8 @@ def crear_lista_registros_a_partir_de(archivo:str) -> list[RegistroDeCosto]:
 
     return lista_materiales
 
-def registrarMaterial(nombre:str, densidad:str, precio:str, archivo:str):
-    archivo_modificable = open(archivo,"a")
 
-    material = Material(nombre, densidad, precio)
-
-    archivo_lectura = open(archivo, "r")
-    lineas_archivo:list[str] = archivo_lectura.readlines()
-
-    for linea in lineas_archivo:
-        caracteristicas_material:str = linea.split(',')
-        material.verificarQueNombreNoSea(caracteristicas_material[0], archivo) 
-
-    if(lineas_archivo == []):
-        archivo_modificable.write(f"{nombre},{densidad},{precio}")
-    else:
-        archivo_modificable.write(f"\n{nombre},{densidad},{precio}")
-    
-    archivo_modificable.close()
-
-def registrarManoDeObra(manoDeObra: ManoDeObra, archivo:str):
+def registrarRegistroDeCosto(registro:RegistroDeCosto, archivo:str):
     archivo_modificable = open(archivo,"a")
 
     archivo_lectura = open(archivo, "r")
@@ -370,15 +368,14 @@ def registrarManoDeObra(manoDeObra: ManoDeObra, archivo:str):
 
     for linea in lineas_archivo:
         caracteristicas_registro:str = linea.split(',')
-        manoDeObra.lanzarErrorAlRegistrarseSiNombreEs(caracteristicas_registro[0], archivo) 
+        registro.lanzarErrorAlRegistrarseSiNombreEs(caracteristicas_registro[0], archivo) 
 
     if(lineas_archivo == []):
-        archivo_modificable.write(f"{manoDeObra.nombre},{manoDeObra.precio_str()}")
+        archivo_modificable.write(registro.espresarseEnFormatoRegistro())
     else:
-        archivo_modificable.write(f"\n{manoDeObra.nombre},{manoDeObra.precio}")
+        archivo_modificable.write("\n"+registro.espresarseEnFormatoRegistro())
     
     archivo_modificable.close()
-
 
 def registrarListaRegistros(lista_registros:list[RegistroDeCosto], archivo:str):
     
@@ -388,12 +385,8 @@ def registrarListaRegistros(lista_registros:list[RegistroDeCosto], archivo:str):
           noSePuedeRegistrarSinMaterialesDescripcionDeError())
     
     for registro in lista_registros:
-        if(registro.esMaterial()):
-            registrarMaterial(registro.nombre, registro.densidad_str(), registro.precio_str(), archivo)
-
-        if(registro.esManoDeObra()):
-            registrarManoDeObra(registro, archivo)
-    #for registro in lista_registros:
+        registrarRegistroDeCosto(registro, archivo)
+    
 
 
 
