@@ -1,5 +1,8 @@
 import math
 from collections.abc import Callable
+from dataclasses import dataclass
+
+
 
 def es_float_estricto(cadena) -> bool:
     try:
@@ -9,6 +12,17 @@ def es_float_estricto(cadena) -> bool:
     except (ValueError, TypeError):
         return False
     
+
+# def assertarAtributoNumericoValido(atributo_en_str:str, descripcion_error_para_no_numerico:str, descripcion_error_para_no_positivo:str):
+#     if not(es_float_estricto(atributo_en_str)):
+#         lanzarTypeError(descripcion_error_para_no_numerico)
+        
+
+#     atributo_en_str = float(atributo_en_str)
+
+#     if atributo_en_str <=0:
+#         lanzarValueError(descripcion_error_para_no_positivo)
+
 def lanzarValueError(descripcion_de_error:str):
     raise ValueError(descripcion_de_error)
 
@@ -138,7 +152,7 @@ class RegistroDeCosto:
             "Las subclases deben implementar PrecioInvalidoDescripcionDeError"
         )
     
-
+#@dataclass(frozen=True)
 class ManoDeObra(RegistroDeCosto):
     def __init__(self, precio):
 
@@ -149,6 +163,22 @@ class ManoDeObra(RegistroDeCosto):
 
     def __str__(self):
         return f"{self.nombre} (precio={self.precio})"
+    
+    # def __eq__(self, otroObjeto):
+    #     if not isinstance(otroObjeto, ManoDeObra):
+    #         return NotImplemented
+
+    #     return self.nombre == otroObjeto.nombre and self.precio == otroObjeto.precio
+        # if(self.nombre == otroObjeto.nombre):
+        #     # if(self.precio == otroObjeto.precio):
+        #     #     raise ValueError(f"Comparando igualdad entre materiales de mismo nombre {self.nombre} y distinto precio")
+
+        #     return True
+        # else: 
+        #     return False
+    
+    # def __hash__(self):
+    #     return hash((self.nombre, self.precio))
     
     #presentarse como string
     def espresarseEnFormatoRegistro(self) -> str:
@@ -194,7 +224,7 @@ class ManoDeObra(RegistroDeCosto):
     def PrecioInvalidoDescripcionDeError(precio_invalido:str):
         return f"La mano de obra tiene un precio inválido de: ${precio_invalido}"
 
-
+#@dataclass(frozen=True)
 class Material(RegistroDeCosto):
     def __init__(self, nombre, densidad, precio):
 
@@ -207,6 +237,25 @@ class Material(RegistroDeCosto):
     def __str__(self):
         return f"{self.nombre} (densidad={self.densidad}, precio={self.precio})"
     
+    # def __eq__(self, otroObjeto):
+    #     if not isinstance(otroObjeto, Material):
+    #         return NotImplemented
+
+    #     return (self.nombre == otroObjeto.nombre and self.densidad == otroObjeto.densidad and self.)
+
+        # if(self.nombre == otroObjeto.nombre):
+        #     # if(self.densidad != otroObjeto.densidad):
+        #     #     raise ValueError(f"Comparando igualdad entre materiales de mismo nombre {self.nombre} y distinta densidad")
+        #     # if(self.precio == otroObjeto.precio):
+        #     #     raise ValueError(f"Comparando igualdad entre materiales de mismo nombre {self.nombre} y distinto precio")
+
+        #     return True
+        # else: 
+        #     return False
+    
+    # def __hash__(self):
+    #     return hash((self.nombre, self.densidad, self.precio))
+
     #romper encapsulamiento
     def densidad_str(self) -> str:
         return str(self.densidad)
