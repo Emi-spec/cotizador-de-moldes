@@ -6,4 +6,4 @@ Acero Especial K,8,11
 Acero Inoxidable,8,16
 Acero SAE 4140,8,6
 Cobre Berilio,9,110
-mano de obra,0,35
+mano de obra,35

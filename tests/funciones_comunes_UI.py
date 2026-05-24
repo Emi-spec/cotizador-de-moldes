@@ -14,7 +14,7 @@ def assertarArchivoInexistente(archivo:str):
     assert not archivo.exists()
 
 def assertarContenidoDeArchivoEsElEsperado(archivo:str, contenido_esperado:list[str]):
-
+    
     archivo_modificado = open(archivo,"r")
     lineas_archivo:list[str] = archivo_modificado.readlines()
     archivo_modificado.close() #CERRE EL ARCHIVO

@@ -148,9 +148,28 @@ def test_05_noCreaMaterialSiPrecioInvalido(tmpdir):
                                             "Aluminio 5083,1,e3", 
                                             TypeError, 
                                             cotizador.Material.PrecioInvalidoDescripcionDeError("Aluminio 5083","e3"))
-    
 
-def test_05_1_noCreListaSinRegistroDeManoDeObra(tmpdir):
+def test_05_1_noCreaMaterialSiTieneMasDeTresCampos(tmpdir):
+    registro_invalido = """Aluminio 5083,1,34,r
+mano de obra,34"""
+
+    assertarLevantamientoErrorAlLeerArchivoInvalidoConDescripcion(tmpdir, 
+                                            "material_precio_invalido.txt", 
+                                            registro_invalido, 
+                                            ValueError, 
+        cotizador.elMaterialTieneMasDeTresCamposDescripcionDeError("Aluminio 5083", tmpdir/"material_precio_invalido.txt"))
+
+def test_05_2_noCreaManoDeObraSiTieneMasDeDosCampos(tmpdir):
+    registro_invalido = """Aluminio 5083,1,34
+mano de obra,34,3"""
+
+    assertarLevantamientoErrorAlLeerArchivoInvalidoConDescripcion(tmpdir, 
+                                            "material_precio_invalido.txt", 
+                                            registro_invalido, 
+                                            ValueError, 
+            cotizador.laManoDeObraTieneMasDeDosCamposDescripcionDeError(tmpdir/"material_precio_invalido.txt"))
+
+def test_05_3_noCreListaSinRegistroDeManoDeObra(tmpdir):
 
     lista_registros_sin_mano_de_obra = [Material("Aluminio 7075","2.8","23.50"), Material("Acero Amutit","8","7.5"),
                                         Material("Acero Especial K","8","11")]

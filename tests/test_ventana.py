@@ -17,12 +17,14 @@ Acero Amutit,8,7.5
 Cobre Berilio,9,110
 mano de obra, 35"""
 
-lista_materiales_aceptados:list[str] = [Material("Aluminio 5083","2.8","19"),Material("Acero Amutit","8","7.5"), 
-                                       Material("Acero Inoxidable","8","16")]
-
 ManoDeObra_aceptada:ManoDeObra = ManoDeObra("35")
 
-lista_registros_aceptados = lista_materiales_aceptados.copy()
+lista_materiales_aceptados:list[Material] = [Material("Aluminio 5083","2.8","19"),Material("Acero Amutit","8","7.5"), 
+                                       Material("Acero Inoxidable","8","16")]
+
+
+
+lista_registros_aceptados:list[RegistroDeCosto] = lista_materiales_aceptados.copy()
 lista_registros_aceptados.append(ManoDeObra_aceptada)
 
 def verificarQueDialogDeErrorDeDialogTengaComoDescripcion(ventana:Ventana, descripcion_de_error_esperada:str):
@@ -94,31 +96,33 @@ def test_02_VentanaMandaARehacerTodoElArchivoAlHaberUnErrorEnElArchivo(qtbot, tm
                         lambda: abrirVentanaYVerificarQueDialogDeErrorTengaComoDescripcion(qtbot, monkeypatch, 
                                     archivo,cotizador.debeHaberAlMenosUnRegistroManoDeObraDescripcionDeError(archivo)))
 
-def ejecutarGuardarCambiosYVerificarQueElContenidoDeArchivoEstaIgual(ventana:Ventana, archivo:str):
+
+def ejecutarGuardarCambiosYAccionesYVerificarQueElContenidoDeArchivoEstaIgual(ventana:Ventana, archivo:str, accionesYVerificaciones:Callable[[], None] ):
     ventana.guardarCambios()
+
+    accionesYVerificaciones()
 
     ui.assertarContenidoDeArchivoEsElEsperado(archivo, 
                                             com_cot.pasarListaRegistrosALineasParaArchivo(lista_registros_aceptados))
 
+
 def test_03_VentanaGuardarCambiosSinCambiosRealizadosNoModificaElArchivo(qtbot, tmpdir, monkeypatch):
 
     abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
-            lambda ventana, archivo: ejecutarGuardarCambiosYVerificarQueElContenidoDeArchivoEstaIgual(ventana, archivo))
+            lambda ventana, archivo: 
+            ejecutarGuardarCambiosYAccionesYVerificarQueElContenidoDeArchivoEstaIgual(ventana, archivo, lambda: None))
 
 
 
 def verificarQueLanzamientoDeErrorAlPonerPrecioInvalidoAUnRegistro(ventana:Ventana, archivo:str):
     
     acero:Material = lista_registros_aceptados[1]
-    ventana.input_precios[acero.nombre].setText("0")
+    ventana.input_precios[acero].setText("0")
 
-    ventana.guardarCambios()
+    ejecutarGuardarCambiosYAccionesYVerificarQueElContenidoDeArchivoEstaIgual(ventana, archivo, lambda: 
+        verificarQueDialogDeErrorDeDialogTengaComoDescripcion(ventana, 
+                                            cotizador.Material.PrecioInvalidoDescripcionDeError(acero.nombre, "0")))
 
-    verificarQueDialogDeErrorDeDialogTengaComoDescripcion(ventana, 
-                                cotizador.Material.PrecioInvalidoDescripcionDeError(acero.nombre, "0"))
-
-    ui.assertarContenidoDeArchivoEsElEsperado(archivo, 
-                                            com_cot.pasarListaRegistrosALineasParaArchivo(lista_registros_aceptados))
 
 def test_04_VentanaNoSePuedeColocarUnPrecioInvalidoAUnMaterial(qtbot, tmpdir, monkeypatch):
 
@@ -131,46 +135,77 @@ def verificarLanzamientoDeErrorAlPonerPrecioInvalidoALaManoDeObra(ventana:Ventan
 
     ventana.input_precios[ManoDeObra_aceptada].setText("a")
 
+    ejecutarGuardarCambiosYAccionesYVerificarQueElContenidoDeArchivoEstaIgual(ventana, archivo, lambda:
+        verificarQueDialogDeErrorDeDialogTengaComoDescripcion(ventana, 
+                                                cotizador.ManoDeObra.PrecioInvalidoDescripcionDeError("a")) )
+
+
+def test_05_VentanaNoSePuedeColocarUnPrecioInvalidoAManoDeObra(qtbot, tmpdir, monkeypatch):
+    
+    abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
+            lambda ventana, archivo: 
+            verificarLanzamientoDeErrorAlPonerPrecioInvalidoALaManoDeObra(ventana, archivo))
+
+
+def verificarQueAlCambiarElPrecioDeUnRegistroSeModificaSuPrecioEnElArchivo(ventana:Ventana, archivo:str, registro_de_costo:RegistroDeCosto, registro_de_costo_con_precio_cambiado:RegistroDeCosto):
+
+    lista_registros_modificada = lista_registros_aceptados.copy()
+
+    ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana, lista_registros_modificada, 
+                                registro_de_costo, registro_de_costo_con_precio_cambiado)
+
     ventana.guardarCambios()
 
-    verificarQueDialogDeErrorDeDialogTengaComoDescripcion(ventana, 
-                                cotizador.ManoDeObra.PrecioInvalidoDescripcionDeError("a"))
+    ui.assertarContenidoDeArchivoEsElEsperado(archivo, 
+                                            com_cot.pasarListaRegistrosALineasParaArchivo(lista_registros_modificada))
+
+def test_06_VentanaModificarElPrecioDeUnMaterialModificaSuPrecioEnElArchivo(qtbot, tmpdir, monkeypatch):
+    
+    aluminio:Material = lista_registros_aceptados[0]
+
+    abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
+            lambda ventana, archivo: 
+            verificarQueAlCambiarElPrecioDeUnRegistroSeModificaSuPrecioEnElArchivo(ventana, archivo, 
+                                        aluminio, Material(aluminio.nombre,aluminio.densidad_str(),"93")))
+
+def test_07_VentanaModificarElPrecioDeManoDeObraModificaSuPrecioEnElArchivo(qtbot, tmpdir, monkeypatch):
+    
+    abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
+            lambda ventana, archivo: 
+            verificarQueAlCambiarElPrecioDeUnRegistroSeModificaSuPrecioEnElArchivo(ventana, archivo, 
+                                                                                   ManoDeObra_aceptada, ManoDeObra("93")))
+
+def ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana:Ventana, lista_registros:list[RegistroDeCosto],registro:RegistroDeCosto, 
+        registro_con_precio_modificado:RegistroDeCosto):
+    ventana.input_precios[registro].setText(registro_con_precio_modificado.precio_str())
+    indice_registro = lista_registros.index(registro)
+    lista_registros[indice_registro] = registro_con_precio_modificado
+
+def verificarQueAlCambiarElPrecioDeVariosRegistrosSeModificanSusPreciosEnElArchivo(ventana:Ventana, archivo:str):
+
+    lista_registros_modificada = lista_registros_aceptados.copy()
+
+    acero:Material = lista_registros_aceptados[1]
+
+    ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana, lista_registros_modificada, acero, Material(acero.nombre, acero.densidad_str(), "34"))
+    
+    ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana, lista_registros_modificada, ManoDeObra_aceptada, ManoDeObra("42"))
+    
+    acero_2:Material = lista_registros_aceptados[2]
+    ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana, lista_registros_modificada, 
+                                acero_2, Material(acero_2.nombre, acero_2.densidad_str(), "33"))
+
+    ventana.guardarCambios()
 
     ui.assertarContenidoDeArchivoEsElEsperado(archivo, 
-                                            com_cot.pasarListaRegistrosALineasParaArchivo(lista_registros_aceptados))
+                                            com_cot.pasarListaRegistrosALineasParaArchivo(lista_registros_modificada))
 
-
-# def test_05_VentanaNoSePuedeColocarUnPrecioInvalidoAManoDeObra(qtbot, tmpdir, monkeypatch):
+def test_08_VentanaModificarElPrecioDeVariosRegistrosModificaSuPrecioEnElArchivo(qtbot, tmpdir, monkeypatch):
     
-#     abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
-#             lambda ventana, archivo: 
-#             verificarLanzamientoDeErrorAlPonerPrecioInvalidoALaManoDeObra(ventana, archivo))
-
-
-# def verificarQueAlCambiarPrecioDeUnRegistroSeModificaSuPrecioEnElArchivo(ventana:Ventana, archivo:str):
+    abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
+            lambda ventana, archivo: 
+            verificarQueAlCambiarElPrecioDeVariosRegistrosSeModificanSusPreciosEnElArchivo(ventana, archivo))
     
-#     aluminio:Material = lista_registros_aceptados[0]
-#     ventana.input_precios[aluminio.nombre].setText("93")
 
-#     lista_registros_modificada = lista_registros_aceptados.copy()
-#     lista_registros_modificada[0] = Material(aluminio.nombre,aluminio.densidad_str(),"93")
-
-#     ventana.guardarCambios()
-
-#     ui.assertarContenidoDeArchivoEsElEsperado(archivo, 
-#                                             com_cot.pasarListaRegistrosALineasParaArchivo(lista_registros_modificada))
-
-# def test_05_VentanaModificarElPrecioDeUnMaterialModificaSuPrecioEnElArchivo(qtbot, tmpdir, monkeypatch):
-
-#     abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
-#             lambda ventana, archivo: verificarQueAlCambiarPrecioDeUnRegistroSeModificaSuPrecioEnElArchivo(ventana, archivo))
-
-    # lista_registros_aceptados = lista_materiales_aceptados.copy()
-    # lista_registros_aceptados.append(ManoDeObra_aceptada)
-
-    # archivo = ui.crearArchivoConContenido(tmpdir, "archivo_registros.txt", 
-    #                                       com_cot.pasarListaRegistrosATexto(lista_registros_aceptados))
-
-    # ventana = ui.crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
-
+def test_09():
     

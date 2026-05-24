@@ -62,7 +62,7 @@ class Ventana(QMainWindow):
                 precio_del_material = crearLineEdit(registro.precio_str())
                 self.layout_materiales_registrados.addWidget(precio_del_material, index+1, 2)
 
-                self.input_precios[registro.nombre] = precio_del_material
+                self.input_precios[registro] = precio_del_material
             
             if(registro.esManoDeObra()):
                 nombre_mano_de_obra = QLabel(registro.nombre)
@@ -71,7 +71,7 @@ class Ventana(QMainWindow):
                 precio_mano_de_obra = crearLineEdit(registro.precio_str())
                 self.layout_materiales_registrados.addWidget(precio_mano_de_obra, index+1, 2)
 
-                self.input_precios[registro.nombre] = precio_mano_de_obra
+                self.input_precios[registro] = precio_mano_de_obra
 
         # Botón para leer valores
         boton_guardar_cambios = QPushButton("Guardar Cambios")
@@ -86,19 +86,33 @@ class Ventana(QMainWindow):
         self.dialogParaCrearRegistro = DialogCrearRegistros(self)
         self.dialogParaCrearRegistro.exec()
 
+    def inputsPreciosSonValidos(self) -> bool:
+        for registro in self.input_precios:
+            if(self.input_precios[registro].text() != ""):
+                precio_a_modificar = self.input_precios[registro].text()
+
+                if(not registro.esPrecioValido(precio_a_modificar)):    
+                    registro.lanzarErrorPrecioInvalidoEnVentana(self, precio_a_modificar)
+                    return False
+        
+        return True
+
     def guardarCambios(self):
+    
+        if(self.inputsPreciosSonValidos()):
+            for indice, registro in enumerate(self.input_precios):
+                if(self.input_precios[registro].text() != ""):
+            
+                    precio_a_modificar = self.input_precios[registro].text()
+                    
+                    registro.agregarseALaListaConElPrecioModificado(self, indice, precio_a_modificar)
 
-        for nombre_material in self.input_precios:
-            if(self.input_precios[nombre_material].text() == ""):
-                pass
-            else:
-                
-                precio_a_modificar = self.input_precios[nombre_material].text()
 
-                #Material.assertPrecioValido(nombre_material, precio_a_modificar)
-                
-                self.ejecutarDialogDeErrorConDescripcion(
-                    Material.PrecioInvalidoDescripcionDeError(nombre_material, precio_a_modificar))
+            cotizador.limpiarArchivoYRegistrarListaRegistros(self.lista_registros, ARCHIVO_REGISTROS)
+
+
+
+
 
     def cargar_lista_registros(self, nombre_archivo:str):
 

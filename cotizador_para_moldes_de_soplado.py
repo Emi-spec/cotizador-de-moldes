@@ -1,7 +1,7 @@
 import math
 from collections.abc import Callable
-from dataclasses import dataclass
-
+from dataclasses import dataclass, field
+#from ventana_cotizador import Ventana
 
 
 def es_float_estricto(cadena) -> bool:
@@ -13,21 +13,22 @@ def es_float_estricto(cadena) -> bool:
         return False
     
 
-# def assertarAtributoNumericoValido(atributo_en_str:str, descripcion_error_para_no_numerico:str, descripcion_error_para_no_positivo:str):
-#     if not(es_float_estricto(atributo_en_str)):
-#         lanzarTypeError(descripcion_error_para_no_numerico)
-        
-
-#     atributo_en_str = float(atributo_en_str)
-
-#     if atributo_en_str <=0:
-#         lanzarValueError(descripcion_error_para_no_positivo)
-
 def lanzarValueError(descripcion_de_error:str):
     raise ValueError(descripcion_de_error)
 
 def lanzarTypeError(descripcion_de_error:str):
     raise TypeError(descripcion_de_error)
+
+def lanzarErrorLasSubclasesDebenImplementar(nombre_funcion:str): 
+    raise NotImplementedError(
+            f"Las subclases deben implementar {nombre_funcion}"
+        )
+
+def elMaterialTieneMasDeTresCamposDescripcionDeError(nombre_material:str, archivo:str):
+    return f"El material {nombre_material} tiene más de tres campos en el archivo {archivo}"
+
+def laManoDeObraTieneMasDeDosCamposDescripcionDeError(archivo:str):
+    return f"La mano de obra tiene más de dos campos en el archivo {archivo}"
 
 def debeHaberAlMenosUnRegistroManoDeObraDescripcionDeError(archivo:str) -> str:
     return f"debe haber al menos un registro de mano de obra en el archivo {archivo}"
@@ -57,54 +58,62 @@ class RegistroDeCosto:
 
     #asserciones
     def assertPrecioValido(self, precio:str):
-        raise NotImplementedError(
-            "Las subclases deben implementar assertPrecioValido"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("assertPrecioValido")
     
+    # def verificarPrecioValidoEnVentana(self, ventana:'Ventana', precio_en_str:str):
+        
+    #     self.verificarAtributoNumericoValidoLanzando(precio_en_str, 
+    #                                         lambda: self.lanzarErrorPrecioInvalidoEnVentana(ventana, precio_en_str),
+    #                                         lambda: self.lanzarErrorPrecioInvalidoEnVentana(ventana, precio_en_str))
+
+    @staticmethod    
+    def verificarAtributoNumericoValidoLanzando(atributo_en_str:str, lanzarErrorParaNoNumerico:Callable[[],None], lanzarErrorParaNoPositivo:Callable[[],None] ):
+        if not(es_float_estricto(atributo_en_str)):
+            lanzarErrorParaNoNumerico()
+        else:
+
+            atributo_en_str = float(atributo_en_str)
+
+            if atributo_en_str <=0:
+                lanzarErrorParaNoPositivo()
+
+    @staticmethod
+    def assertarAtributoNumericoValido(atributo_en_str:str, descripcion_error_para_no_numerico:str, 
+                                       descripcion_error_para_no_positivo:str):
+        
+        RegistroDeCosto.verificarAtributoNumericoValidoLanzando(atributo_en_str, 
+                                                    lambda: lanzarTypeError(descripcion_error_para_no_numerico), 
+                                                    lambda: lanzarValueError(descripcion_error_para_no_positivo))
+
     #romper encapsulamiento
     def precio_str(self) -> str:
         return str(self.precio)
     
     #presentarse como string
     def espresarseEnFormatoRegistro(self) -> str:
-        raise NotImplementedError(
-            "Las subclases deben implementar espresarseEnFormatoRegistro"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("espresarseEnFormaRegistro")
     
-    @staticmethod
-    def assertarAtributoNumericoValido(atributo_en_str:str, descripcion_error_para_no_numerico:str, descripcion_error_para_no_positivo:str):
-        if not(es_float_estricto(atributo_en_str)):
-            lanzarTypeError(descripcion_error_para_no_numerico)
-            
-
-        atributo_en_str = float(atributo_en_str)
-
-        if atributo_en_str <=0:
-            lanzarValueError(descripcion_error_para_no_positivo)
-    
+    def esPrecioValido(self, precio_en_str:str):
+        if(es_float_estricto(precio_en_str)):
+            return (float(precio_en_str) >0)
+        else: 
+            return False
+        
         
     def tieneComoNombre(self, nombre_esperado:str):
         return self.nombre == nombre_esperado
     
     def tieneIgualNombreQue(self, otroMaterialOManoDeObra:'RegistroDeCosto'):
-        raise NotImplementedError(
-            "Las subclases deben implementar tieneIgualNombreQue"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("tieneIgualNombreQue")
 
     def tieneIgualNombreQueMaterial(self, otroMaterial:'Material'):
-        raise NotImplementedError(
-            "Las subclases deben implementar tieneIgualNombreQueMaterial"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("tieneIgualNombreQueMaterial")
 
     def tieneIgualNombreQueManoDeObra(self, manoDeObra:'ManoDeObra'):
-        raise NotImplementedError(
-            "Las subclases deben implementar tieneIgualNombreQueManoDeObra"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("tieneIgualNombreQueManoDeObra")
     
     def lanzarErrorConArchivoSiComparteNombreCon(self, otroMaterialOManoDeObra:'RegistroDeCosto', descripcion_de_err):
-        raise NotImplementedError(
-            "Las subclases deben implementar verificarQueNoCompartaNombreCon"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("verificarQueNoCompartaNombreCon")
     
     def realizarAccionSiComparteNombreCon(self, otroRegistroDeCosto:'RegistroDeCosto', 
                                           accionDelRegistro:Callable[['RegistroDeCosto'], None]):
@@ -131,35 +140,43 @@ class RegistroDeCosto:
     
     #errores 
     def lanzarErrorYaEstaRegistradoRegistroDelMismoNombreEn(archivo):
-        raise NotImplementedError(
-            "Las subclases deben implementar lanzarErrorYaEstaRegistradoRegistroDelMismoNombre"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("lanzarErrorYaEstaRegistradoRegistroDelMismoNombre")
 
     def lanzarErrorNoSePuedeRegistrarRegistrosDeMismoNombre(self):
-        raise NotImplementedError(
-            "Las subclases deben implementar lanzarErrorNoSePuedeRegistrarRegistrosDeMismoNombre"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("lanzarErrorNoSePuedeRegistrarRegistrosDeMismoNombre")
+    
+    #lanzar error en ventana
+    def lanzarErrorPrecioInvalidoEnVentana(self, ventana:'Ventana', precio_a_modificar:str):
+        lanzarErrorLasSubclasesDebenImplementar("lanzarErrorPrecioInvalidoEnVentana")
 
     @staticmethod
     def lanzarErrorDeRegistrosDeIgualNombreEnArchivo():
-        raise NotImplementedError(
-            "Las subclases deben implementar lanzarErrorDeRegistrosDeIgualNombre"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("lanzarErrorDeRegistrosDeIgualNombre")
         
     @staticmethod
     def PrecioInvalidoDescripcionDeError(precio:str):
-        raise NotImplementedError(
-            "Las subclases deben implementar PrecioInvalidoDescripcionDeError"
-        )
+        lanzarErrorLasSubclasesDebenImplementar("PrecioInvalidoDescripcionDeError")
     
-#@dataclass(frozen=True)
+@dataclass(frozen=True)
 class ManoDeObra(RegistroDeCosto):
-    def __init__(self, precio):
+    precio: str
+    # Definimos nombre como fijo y le decimos que no se pida en el constructor
+    nombre: str = field(default="Mano de obra", init=False)
 
-        self.assertPrecioValido(precio)
+    def __post_init__(self):
+        # Aquí puedes validar. Si levanta una excepción, el objeto no se creará
+        self.assertPrecioValido(self.precio)
 
-        self.nombre = "Mano de obra"
-        self.precio = float(precio)          # precio por unidad (ej: por kg)
+        object.__setattr__(self, 'precio', float(self.precio))
+
+
+    # def __init__(self, precio):
+
+    #     self.assertPrecioValido(precio)
+
+    #     self.nombre:str = "Mano de obra"
+    #     self.precio:float          # precio por unidad (ej: por kg)
+
 
     def __str__(self):
         return f"{self.nombre} (precio={self.precio})"
@@ -224,15 +241,35 @@ class ManoDeObra(RegistroDeCosto):
     def PrecioInvalidoDescripcionDeError(precio_invalido:str):
         return f"La mano de obra tiene un precio inválido de: ${precio_invalido}"
 
-#@dataclass(frozen=True)
+    #mensajes de error en ventana
+    def lanzarErrorPrecioInvalidoEnVentana(self, ventana:'Ventana', precio_a_modificar:str):
+        ventana.ejecutarDialogDeErrorConDescripcion(
+        ManoDeObra.PrecioInvalidoDescripcionDeError(precio_a_modificar))
+
+    #Ventana
+    def agregarseALaListaConElPrecioModificado(self, ventana:'Ventana', indice:int, precio_a_modificar:str):
+        ventana.lista_registros[indice] = ManoDeObra(precio_a_modificar)
+
+@dataclass(frozen=True)
 class Material(RegistroDeCosto):
-    def __init__(self, nombre, densidad, precio):
+    nombre: str
+    densidad:str
+    precio: str    
 
-        Material.assertarCaracteristicasValidas(nombre,densidad,precio)
+    def __post_init__(self): #se ejecuta justo antes de crear al objeto
+        Material.assertarCaracteristicasValidas(self.nombre,self.densidad,self.precio)
 
-        self.nombre = nombre
-        self.densidad = float(densidad)      # kg/m³, por ejemplo
-        self.precio = float(precio)          # precio por unidad (ej: por kg)
+        #se modifica a float a ultimo momento porque si no queda en str 
+        object.__setattr__(self, 'densidad', float(self.densidad))
+        object.__setattr__(self, 'precio', float(self.precio))
+
+    # def __init__(self, nombre, densidad, precio):
+
+    #     Material.assertarCaracteristicasValidas(nombre,densidad,precio)
+
+    #     self.nombre = nombre
+    #     self.densidad = float(densidad)      # kg/m³, por ejemplo
+    #     self.precio = float(precio)          # precio por unidad (ej: por kg)
 
     def __str__(self):
         return f"{self.nombre} (densidad={self.densidad}, precio={self.precio})"
@@ -326,6 +363,15 @@ class Material(RegistroDeCosto):
     def lanzarErrorNoSePuedeRegistrarRegistrosDeMismoNombre(self):
         lanzarValueError(noSePuedeRegistrarConMaterialesDeMismoNombreDescripcionDeError())
 
+    #Ventana
+    def agregarseALaListaConElPrecioModificado(self, ventana:'Ventana', indice:int, precio_a_modificar:str):
+        ventana.lista_registros[indice] = Material(self.nombre, self.densidad_str(), precio_a_modificar)
+
+    #mensajes de error en ventana
+    def lanzarErrorPrecioInvalidoEnVentana(self, ventana:'Ventana', precio_a_modificar:str):
+        ventana.ejecutarDialogDeErrorConDescripcion(
+            Material.PrecioInvalidoDescripcionDeError(self.nombre, precio_a_modificar))
+
     @staticmethod
     def NombreNuloDescripcionDeError(densidad:str, precio:str):
         return f"El nombre del material con densidad: {densidad} (Kg/dm3) y precio: ${precio} no puede estar vacío"
@@ -396,9 +442,15 @@ def crear_lista_registros_a_partir_de(archivo:str) -> list[RegistroDeCosto]:
             
             elif cant_comas == 2 and linea[i]!="\n":
                 precio = precio+linea[i]
+            
+            elif cant_comas == 3:
+                lanzarValueError(elMaterialTieneMasDeTresCamposDescripcionDeError(nombre, archivo))
 
         #print(f"material: {material}, densidad:{densidad}, precio: {precio}")
         if (nombre == "Mano de obra" or nombre == "mano de obra"):
+            if(precio != ""):
+                lanzarValueError(laManoDeObraTieneMasDeDosCamposDescripcionDeError(archivo))
+
             lista_materiales.append(ManoDeObra(densidadOPrecio))
         else:
             lista_materiales.append(Material(nombre, densidadOPrecio, precio))
@@ -425,6 +477,13 @@ def registrarRegistroDeCosto(registro:RegistroDeCosto, archivo:str):
         archivo_modificable.write("\n"+registro.espresarseEnFormatoRegistro())
     
     archivo_modificable.close()
+
+
+def limpiarArchivoYRegistrarListaRegistros(lista_registros:list[RegistroDeCosto], archivo:str):
+    archivo_para_escribir = open(archivo, "w")
+    archivo_para_escribir.write("")
+
+    registrarListaRegistros(lista_registros, archivo)
 
 def registrarListaRegistros(lista_registros:list[RegistroDeCosto], archivo:str):
     
