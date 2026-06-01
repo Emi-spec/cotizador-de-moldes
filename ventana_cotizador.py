@@ -1,23 +1,36 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QLabel, #para imprimir texto
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
-    QPushButton, QDialog, QApplication, QSizePolicy,
+    QPushButton, QDialog, QApplication, QSizePolicy, QComboBox, QRadioButton,
     QLineEdit) 
 
 import os
 
 from collections.abc import Callable
 import cotizador_para_moldes_de_soplado as cotizador
-from cotizador_para_moldes_de_soplado import (Material, ManoDeObra, RegistroDeCosto)
+from cotizador_para_moldes_de_soplado import (Material, ManoDeObra, RegistroDeCosto,
+        nivelDeDificultadBajo, nivelDeDificultadMedio, nivelDeDificultadAlto, nivelDeDificultadMuyAlto, nivelDeDificultadEspeciales)
 
-ARCHIVO_REGISTROS = "precios.txt"
+ARCHIVO_REGISTROS = "nada.txt"
 
 def crearLineEdit(placeHolderText:str) -> QLabel:
     input = QLineEdit()
     input.setPlaceholderText(placeHolderText)
-    input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+    input.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Maximum)
 
     return input
+
+def crearMenuDesplegable(opciones:list[str]) -> QComboBox:
+    menu = QComboBox()
+    menu.insertItems(0,opciones)
+    
+    return menu
+
+def crearBoton(texto:str, xxx:Callable[[], None]):
+        boton = QPushButton(texto)
+        boton.clicked.connect(xxx)
+
+        return boton
 
 class Ventana(QMainWindow):
     def __init__(self):
@@ -49,43 +62,49 @@ class Ventana(QMainWindow):
 
         self.agregarSeccionesCaracteristicasMaterial()
 
-        self.input_precios:dict[str, QLineEdit] = {}
-
-        for index,registro in enumerate(self.lista_registros):
-            if(registro.esMaterial()):
-                nombre_del_material = QLabel(registro.nombre)
-                self.layout_materiales_registrados.addWidget(nombre_del_material, index+1, 0)
-
-                densidad_del_material = QLabel(registro.densidad_str())
-                self.layout_materiales_registrados.addWidget(densidad_del_material, index+1, 1)
-
-                precio_del_material = crearLineEdit(registro.precio_str())
-                self.layout_materiales_registrados.addWidget(precio_del_material, index+1, 2)
-
-                self.input_precios[registro] = precio_del_material
-            
-            if(registro.esManoDeObra()):
-                nombre_mano_de_obra = QLabel(registro.nombre)
-                self.layout_materiales_registrados.addWidget(nombre_mano_de_obra, index+1, 0)
-
-                precio_mano_de_obra = crearLineEdit(registro.precio_str())
-                self.layout_materiales_registrados.addWidget(precio_mano_de_obra, index+1, 2)
-
-                self.input_precios[registro] = precio_mano_de_obra
+        self.cargarMaterialesRegistradosEInputsPrecios()
 
         # Botón para leer valores
-        boton_guardar_cambios = QPushButton("Guardar Cambios")
-        boton_guardar_cambios.clicked.connect(self.guardarCambios)
+
+        boton_guardar_cambios = crearBoton("Guardar Cambios", self.guardarCambios)
         self.layout_general.addWidget(boton_guardar_cambios)
 
-        central_widget.setLayout(self.layout_general)
+        boton_empezar_cotizacion = crearBoton("Empezar cotización", self.empezarCotizacion)
+        self.layout_general.addWidget(boton_empezar_cotizacion)
 
         # # 👉 IMPORTANTE: asignar layout al widget central
-        # central_widget.setLayout(layout)
+        central_widget.setLayout(self.layout_general)
+
+
     def ejecutarDialogCrearRegistros(self):
         self.dialogParaCrearRegistro = DialogCrearRegistros(self)
         self.dialogParaCrearRegistro.exec()
 
+    def cargarMaterialesRegistradosEInputsPrecios(self):
+        self.input_precios:dict[RegistroDeCosto, QLineEdit] = {}
+
+        for index,registro in enumerate(self.lista_registros):
+                if(registro.esMaterial()):
+                    nombre_del_material = QLabel(registro.nombre)
+                    self.layout_materiales_registrados.addWidget(nombre_del_material, index+1, 0)
+
+                    densidad_del_material = QLabel(registro.densidad_str())
+                    self.layout_materiales_registrados.addWidget(densidad_del_material, index+1, 1)
+
+                    precio_del_material = crearLineEdit(registro.precio_str())
+                    self.layout_materiales_registrados.addWidget(precio_del_material, index+1, 2)
+
+                    self.input_precios[registro] = precio_del_material
+                
+                if(registro.esManoDeObra()):
+                    nombre_mano_de_obra = QLabel(registro.nombre)
+                    self.layout_materiales_registrados.addWidget(nombre_mano_de_obra, index+1, 0)
+
+                    precio_mano_de_obra = crearLineEdit(registro.precio_str())
+                    self.layout_materiales_registrados.addWidget(precio_mano_de_obra, index+1, 2)
+
+                    self.input_precios[registro] = precio_mano_de_obra
+    
     def inputsPreciosSonValidos(self) -> bool:
         for registro in self.input_precios:
             if(self.input_precios[registro].text() != ""):
@@ -104,21 +123,269 @@ class Ventana(QMainWindow):
                 if(self.input_precios[registro].text() != ""):
             
                     precio_a_modificar = self.input_precios[registro].text()
-                    
+                
                     registro.agregarseALaListaConElPrecioModificado(self, indice, precio_a_modificar)
-
+            
+            self.limpiar_layout(self.layout_materiales_registrados)
+            self.cargarMaterialesRegistradosEInputsPrecios()
 
             cotizador.limpiarArchivoYRegistrarListaRegistros(self.lista_registros, ARCHIVO_REGISTROS)
 
+    #de chatgpt -> este limpia widgets y layouts hijos
+    def limpiar_layout(self, layout):
+        if layout is None:
+            return
+
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            sub_layout = item.layout()
+
+            # 1. Si el item es un widget, lo borramos de la memoria
+            if widget is not None:
+                widget.deleteLater()
+            
+            # 2. Si el item es un layout hijo, aplicamos recursividad
+            elif sub_layout is not None:
+                self.limpiar_layout(sub_layout)  # Limpia los hijos del sub-layout
+                sub_layout.deleteLater()         # Borra el sub-layout en sí mismo
+                
+            # 3. Si es un SpacerItem (espaciador), simplemente lo eliminamos
+            # (No tienen deleteLater, se eliminan al perder la referencia de C++)
+
+        # Procesa todos los eventos pendientes una sola vez al final de la limpieza
+        QApplication.processEvents()
 
 
+    def crearCaracteristicaAElegirConMenuDesplegable(self, layout_padre:QGridLayout, 
+                                        texto:str, opciones_desplegables:list[str], fila_en_layout:int) -> QLabel:
+        label = QLabel(texto)
+        menu_desplegable = crearMenuDesplegable(opciones_desplegables)
 
+        layout_padre.addWidget(label, fila_en_layout , 0)
+        layout_padre.addWidget(menu_desplegable, fila_en_layout , 1)
+
+        return menu_desplegable
+
+
+    def crearInputMedidaDelEnvase(self, layout_padre:QGridLayout, texto_label:str, fila_en_layout:int) -> QLabel:
+        label = QLabel(texto_label)
+        input = crearLineEdit("0 mm")
+
+        layout_padre.addWidget(label, fila_en_layout, 0)
+        layout_padre.addWidget(input, fila_en_layout, 1)
+
+        return input
+
+    def crearGroupBoxLayoutGeneral(self, titulo_del_grupo:str, fila_en_layout:int, columna_en_layout:int, rowspan_en_layout:int, 
+            colspan_en_layout:int, asignarWidgetsAlLayout:Callable[[QGridLayout], None]):
+        grupo = QGroupBox()
+        grupo.setTitle(titulo_del_grupo)
+        layout_grilla = QGridLayout()
+        grupo.setLayout(layout_grilla)
+        self.layout_grilla.addWidget(grupo, fila_en_layout, columna_en_layout,rowspan_en_layout,colspan_en_layout)
+        
+        asignarWidgetsAlLayout(layout_grilla)
+
+
+    def crearGroupBoxEnPrimeraColumna(self, titulo_del_grupo:str, fila_en_layout:int, 
+                      asignarWidgetsAlLayout:Callable[[QGridLayout], None]):
+        
+        self.crearGroupBoxLayoutGeneral(titulo_del_grupo, fila_en_layout, 0,1,1, asignarWidgetsAlLayout)
+
+    def asignarInputsDetallesDeCavidadesAlLayout(self, layout_padre:QGridLayout):
+        #cantidad de moldes a cotizar
+        self.input_cantidad_moldes = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, 
+                                                                                       "cantidad de moldes a cotizar: ",
+                                                                                        ["1","2"], 0)
+        
+        #cantidad de cavidades
+        self.input_cantidad_cavidades = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, 
+                                                                                    "Cantidad de cavidades del molde: ", 
+                                                          ["1","2","3","4","5","6","7","8","9","10"], 1)
+
+        #mascaras y troqueles
+        self.input_mascaras_troqueles = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, 
+                                                                        "¿Incluye máscaras de transporte y troqueles?: ", 
+                                                                        ["si","no"],2)
+
+    def asignarInputsDeMedidasDelMoldeAlLayout(self, layout_padre:QGridLayout):
+        #altura
+        self.input_altura_envase = self.crearInputMedidaDelEnvase(layout_padre, "Altura del envase: ", 0)
+
+        #volumen
+        self.input_volumen_envase = self.crearInputMedidaDelEnvase(layout_padre, "Volumen del envase: ", 1)
+
+        #distancia entre centros
+        self.input_distancia_centros = self.crearInputMedidaDelEnvase(layout_padre, "Distancia entre centros que hay entre cavidades: ", 2)
+
+        #ancho por mitad
+        self.input_ancho_mitad = self.crearInputMedidaDelEnvase(layout_padre, "Ancho por mitad del molde: ", 3)
+
+    def AsignarInputsDeEleccionDeMaterialesAlLayout(self, layout_padre:QGridLayout):
+                
+        lista_nombre_materiales = [
+    "Alejandro",
+    "Mateo",
+    "Santiago",
+    "Daniel",
+    "Sebastián",
+    "Lucas",
+    "Benjamín",
+    "Matías",
+    "Nicolás",
+    "Samuel",
+    "Gabriel",
+    "Tomás",
+    "Joaquín",
+    "Diego",
+    "Leonardo",
+    "Adrián"
+]              
+        #postizos de cuerpo 
+        self.input_postizos_cuerpo = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, "Postizos de cuerpo: ", 
+                                                          lista_nombre_materiales, 0)
+
+
+        #Postizos de cuello
+        self.input_postizos_cuello = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, "Postizos de cuello: ", 
+                                                          lista_nombre_materiales, 1)
+
+        #Postizos de fondo
+        self.input_postizos_fondo = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, "Postizos de fondo: ", 
+                                                          lista_nombre_materiales, 2)
+        
+        #Placas de respaldo
+        self.input_placas_respaldo = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, "Placas de respaldo: ", 
+                                                          lista_nombre_materiales, 3)
+        
+        #Postizo prensamangas
+        self.input_prensamangas = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, "Postizo prensamangas: ",
+                                                          lista_nombre_materiales, 4)
+
+    def asignarRadioButtonsNivelesDeDificultad(self, layout_padre:QGridLayout):
+        self.opcion_nivel_bajo = QRadioButton(nivelDeDificultadBajo.presentacion_en_str)
+        self.opcion_nivel_medio = QRadioButton(nivelDeDificultadMedio.presentacion_en_str)
+        self.opcion_nivel_alto = QRadioButton(nivelDeDificultadAlto.presentacion_en_str)
+        self.opcion_nivel_muy_alto = QRadioButton(nivelDeDificultadMuyAlto.presentacion_en_str)
+        self.opcion_nivel_especiales= QRadioButton(nivelDeDificultadEspeciales.presentacion_en_str)
+
+        layout_padre.addWidget(self.opcion_nivel_bajo, 0, 0)
+        layout_padre.addWidget(self.opcion_nivel_medio, 1, 0)
+        layout_padre.addWidget(self.opcion_nivel_alto, 2, 0)
+        layout_padre.addWidget(self.opcion_nivel_muy_alto, 3, 0)
+        layout_padre.addWidget(self.opcion_nivel_especiales, 4, 0)
+
+    def empezarCotizacion(self):
+        self.limpiar_layout(self.layout_general) 
+
+        self.layout_grilla = QGridLayout()
+        self.layout_general.addLayout(self.layout_grilla)
+
+        #Detalles de cavidades
+        self.crearGroupBoxEnPrimeraColumna("Detalles de cavidades", 0, 
+                                           lambda layout: self.asignarInputsDetallesDeCavidadesAlLayout(layout))
+
+        #Caracteristicas del molde
+        self.crearGroupBoxEnPrimeraColumna("medidas del molde", 1, 
+                                           lambda layout: self.asignarInputsDeMedidasDelMoldeAlLayout(layout))
+        
+
+        #nivel de dificultad
+        self.crearGroupBoxLayoutGeneral("Nivel de dificultad del envase:", 0, 1, 3, 3, lambda layout: 
+                 self.asignarRadioButtonsNivelesDeDificultad(layout))
+
+        # ingreso de tipo de material
+        self.crearGroupBoxEnPrimeraColumna("Ingrese el material a utilizar", 2, lambda layout: 
+                           self.AsignarInputsDeEleccionDeMaterialesAlLayout(layout))
+
+        boton_cotizar = crearBoton("Cotizar", self.cotizar)
+        self.layout_grilla.addWidget(boton_cotizar, 3, 0, 1, 4)
+
+    def ejecutarDialogDeErrorSiInputNumericoInvalido(self, input:str, descripcion_de_error:str):
+        cotizador.verificarAtributoNumericoValidoLanzando(input, 
+            lambda: self.ejecutarDialogDeErrorConDescripcion(descripcion_de_error),
+            lambda: self.ejecutarDialogDeErrorConDescripcion(descripcion_de_error))
+
+    # def xxx(self, input:str, descripcion_de_error_con_input:Callable[[str], str]):
+    #     self.ejecutarDialogDeErrorSiInputNumericoInvalido(input, 
+    #             descripcion_de_error_con_input(input))
+
+    def cotizar(self):
+        
+        self.ejecutarDialogDeErrorSiInputNumericoInvalido(self.input_altura_envase.text(), 
+                cotizador.alturaDeEnvaseInvalidaDescripcionDeError(self.input_altura_envase.text()))
+
+        self.ejecutarDialogDeErrorSiInputNumericoInvalido(self.input_volumen_envase.text(), 
+                cotizador.volumenDeEnvaseInvalidoDescripcionDeError(self.input_volumen_envase.text()))
+        
+        self.ejecutarDialogDeErrorSiInputNumericoInvalido(self.input_distancia_centros.text(), 
+                cotizador.distanciaEntreCentrosInvalidaDescripcionDeError(self.input_distancia_centros.text()))
+
+        self.ejecutarDialogDeErrorSiInputNumericoInvalido(self.input_ancho_mitad.text(), 
+                cotizador.anchoPorMitadDelMoldeInvalidoDescripcionDeError(self.input_ancho_mitad.text()))
+        
+        if(not self.opcion_nivel_bajo.isChecked() and 
+           not self.opcion_nivel_medio.isChecked() and 
+           not self.opcion_nivel_alto.isChecked() and
+           not self.opcion_nivel_muy_alto.isChecked() and
+           not self.opcion_nivel_especiales.isChecked()):
+            self.ejecutarDialogDeErrorConDescripcion(cotizador.NoSeEligioUnNivelDeDificultadDelEnvaseDescripcionDeError())
+
+        if(self.input_mascaras_troqueles.currentText() == "si"):
+            mascaras_troqueles:bool = True
+        else: 
+            mascaras_troqueles:bool = False
+
+        # cotizador.cotizarEnBaseA(int(self.input_cantidad_moldes.currentText()), 
+        #                          int(self.input_cantidad_cavidades.currentText()),
+        #                          mascaras_troqueles,
+        #                          float(self.input_altura_envase.text()),
+        #                          float(self.input_volumen_envase.text()),
+        #                          float(self.input_distancia_centros.text()),
+        #                          float(self.input_ancho_mitad.text()),
+        #                              )
+        
+    def xxx(self, nombre_archivo):
+        try: 
+            if(os.path.getsize(nombre_archivo) == 0):
+                self.ejecutarDialogCrearRegistros()
+            #     lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+            #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
+                return False
+            else:
+                cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+                return True
+
+        except (FileNotFoundError):
+            
+            self.ejecutarDialogCrearRegistros()
+            #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
+            # lista_registros:list[Material] = []
+            return False
+
+        except (ValueError) as descripcion_de_error:
+            self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
+
+            self.ejecutarDialogCrearRegistros()
+            return False
+            #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
+            # lista_registros:list[Material] = []
+
+            #lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
 
     def cargar_lista_registros(self, nombre_archivo:str):
+
+        # zzz:bool = False
+
+        # while not zzz:
+        #     zzz = self.xxx() 
 
         try: 
             if(os.path.getsize(nombre_archivo) == 0):
                 self.ejecutarDialogCrearRegistros()
+            #     lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+            #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
                 lista_registros:list[Material] = []
             else:
                 lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
@@ -126,15 +393,17 @@ class Ventana(QMainWindow):
         except (FileNotFoundError):
             
             self.ejecutarDialogCrearRegistros()
-
+            #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
             lista_registros:list[Material] = []
 
         except (ValueError) as descripcion_de_error:
             self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
 
             self.ejecutarDialogCrearRegistros()
-
+            #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
             lista_registros:list[Material] = []
+
+            #lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
 
         return lista_registros
 
@@ -281,9 +550,10 @@ class DialogCrearRegistros(QDialog):
             self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
 
 
-    def registrarTodosLosRegistrosDeCostoAgregados(self, input_costo_mano_obra:str, ):
-        self.materiales_agregados.append(ManoDeObra(input_costo_mano_obra))
-        cotizador.registrarListaRegistros(self.materiales_agregados, ARCHIVO_REGISTROS)
+    def registrarTodosLosRegistrosDeCostoAgregados(self, input_costo_mano_obra:str):
+        materiales_a_agregar = self.materiales_agregados.copy()
+        materiales_a_agregar.append(ManoDeObra(input_costo_mano_obra))
+        cotizador.registrarListaRegistros(materiales_a_agregar, ARCHIVO_REGISTROS)
 
         #CHEQUEAR
         self.limpiar_layout(self.layout_materiales_registrados)
@@ -311,22 +581,30 @@ class DialogCrearRegistros(QDialog):
         # Procesa todos los eventos pendientes (borrado de widgets, repintado, etc.)
         QApplication.processEvents()
 
-    def guardarTodoYCerrar(self):
-
+    def noSaltaErrorAlRegistrarRegistrosDeCosto(self) -> bool:
         input_costo_mano_obra = self.input_costo_mano_de_obra.text()
 
         if(self.materiales_agregados == []):
             self.ejecutarDialogDeErrorConDescripcion(
                 DialogCrearRegistros.noHayMaterialesAgregadosParaRegistrarDescripcionDeError())
-
+            return False
+        
         elif(input_costo_mano_obra == ""):
             self.ejecutarDialogDeErrorConDescripcion(DialogCrearRegistros.noSePuedeGuardarSinUnPrecioDeManoDeObra())
-
+            return False
+        
         else:
-            self.lanzarDialogDeErrorConDescripcionSiFalla(lambda: 
-                                            self.registrarTodosLosRegistrosDeCostoAgregados(input_costo_mano_obra))
+            try:
+                self.registrarTodosLosRegistrosDeCostoAgregados(input_costo_mano_obra)
+                return True
+            except (ValueError, TypeError) as descripcion_de_error:
+                self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
+                return False
+            
+    def guardarTodoYCerrar(self):
 
-        self.accept()
+        if (self.noSaltaErrorAlRegistrarRegistrosDeCosto()):
+            self.accept()
 
 
 

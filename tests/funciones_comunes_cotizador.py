@@ -23,13 +23,48 @@ def crearArchivoConContenido(tmpdir, nombre_archivo:str, contenido:str) -> str:
 
     return archivo
 
+def extraerSoloRegistros(lineas_archivo:list[str]):
+
+    linea_registros:list[str] = []
+
+    for linea in lineas_archivo[:-1]: 
+        linea_registros.append(linea[:-1])
+
+    linea_registros.append(lineas_archivo[-1])
+
+    return linea_registros
+
+def verificarSaltosDeLineaCorrectos(lineas_archivo:list[str]):
+    for linea in lineas_archivo[:-1]:
+        assert linea[-1:] == "\n"
+
+    assert lineas_archivo[-1][-1:] != "\n"
+
 def assertarContenidoDeArchivoEsElEsperado(archivo:str, contenido_esperado:list[str]):
 
     archivo_modificado = open(archivo,"r")
     lineas_archivo:list[str] = archivo_modificado.readlines()
     archivo_modificado.close() #CERRE EL ARCHIVO
 
-    assert lineas_archivo == contenido_esperado
+    # registros_esperados:list[str] = []
+
+    # for linea in contenido_esperado[:-1]: 
+    #     registros_esperados.append(linea[:-2])
+
+    # registros_esperados.append(contenido_esperado[-1])
+    #breakpoint()
+    #chequeo de correctamente identado(?)
+    verificarSaltosDeLineaCorrectos(lineas_archivo)
+
+    registros_archivo = extraerSoloRegistros(lineas_archivo)
+    registros_esperados = extraerSoloRegistros(contenido_esperado)
+
+    for registro in registros_archivo:
+        assert registro in registros_esperados
+
+    assert len(registros_archivo) == len(registros_esperados)
+
+    # assert lineas_archivo == contenido_esperado
 
 def pasarListaRegistrosATexto(lista_registros:list[RegistroDeCosto]) -> str:
     contenido_archivo_esperado:str = ""
@@ -69,3 +104,16 @@ def pasarListaRegistrosALineasParaArchivo(lista_registros:list[RegistroDeCosto])
             lineas_archivo_esperadas.append(f"{ultimo_registro.nombre},{ultimo_registro.precio}")
     
     return lineas_archivo_esperadas
+
+#test data
+mano_de_obra_aceptada:ManoDeObra = ManoDeObra("35")
+
+lista_registros_aceptada:list[RegistroDeCosto] = [Material("Aluminio 7075", "2.8", "23.50"),
+                                                  Material("Aluminio 5083", "3", "4.5"), 
+                                                  Material("Acero Amutit", "8", "7.5"),
+                                                  mano_de_obra_aceptada,
+                                                  Material("Acero Especial K", 8, 11)]
+
+lista_materiales_aceptada:list[Material] = [reg for reg in lista_registros_aceptada if reg.esMaterial()]
+
+

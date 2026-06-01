@@ -27,23 +27,23 @@ def crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch,
     crearDialogSobreArchivoYEjecutarAccion(qtbot, monkeypatch, archivo, accionSobreDialogYArchivo)
 
 
-def ingresarInputMaterial(dialog:DialogCrearRegistros, input_nombre:str, input_densidad:str, input_precio:str):
-    dialog.input_material.setText(input_nombre)
-    dialog.input_densidad.setText(input_densidad)
-    dialog.input_precio.setText(input_precio)
+# def ui.ingresarInputMaterial(dialog:DialogCrearRegistros, input_nombre:str, input_densidad:str, input_precio:str):
+#     dialog.input_material.setText(input_nombre)
+#     dialog.input_densidad.setText(input_densidad)
+#     dialog.input_precio.setText(input_precio)
 
-    dialog.agregar_material()      
+#     dialog.agregar_material()      
 
 def ingresarInputYEjecutarDialog(dialog:DialogCrearRegistros, input_nombre:str, input_densidad:str, input_precio:str, 
         accionesSobreDialog:Callable[[DialogCrearRegistros], None]):
     
-    ingresarInputMaterial(dialog, input_nombre, input_densidad, input_precio)
+    ui.ingresarInputMaterial(dialog, input_nombre, input_densidad, input_precio)
 
     accionesSobreDialog(dialog)
 
 
-def agregarMaterial(dialog:DialogCrearRegistros, material:Material):
-    ingresarInputMaterial(dialog, material.nombre, material.densidad_str(), material.precio_str())
+# def agregarMaterial(dialog:DialogCrearRegistros, material:Material):
+#     ingresarInputMaterial(dialog, material.nombre, material.densidad_str(), material.precio_str())
 
 def agregarMaterialYRealizarAcciones(dialog:DialogCrearRegistros, material:Material, 
                                      accionesSobreDialog:Callable[[DialogCrearRegistros], None]):
@@ -58,7 +58,7 @@ def assertarContenidoDeArchivoDespuesDeAgregarMaterial(dialog:DialogCrearRegistr
     
     agregarMaterialYRealizarAcciones(dialog, material, accionesSobreDialog)
 
-    ui.assertarContenidoDeArchivoEsElEsperado(archivo, contenido_esperado)
+    com_cot.assertarContenidoDeArchivoEsElEsperado(archivo, contenido_esperado)
 
 def verificarQueNoHayaMaterialesRegistradosPeroEstenAgregadosLosEsperados(dialog:DialogCrearRegistros, 
                                                                           materiales_agregados_esperados:list[Material], 
@@ -110,16 +110,16 @@ def verificarQueNoSeAgregoMaterial(qtbot, tmpdir, monkeypatch, input_nombre:str,
                                             descripcion_de_error_esperada))
 
 
-def registrarListaMaterialesEInputManoDeObra(dialog, lista_materiales:list[Material], input_costo_de_mano_de_obra:str):
+# def ui.registrarListaMaterialesEInputManoDeObra(dialog, lista_materiales:list[Material], input_costo_de_mano_de_obra:str):
 
-    if(lista_materiales == []): raise ValueError("No se puede ingresar lista vacia en registrarListaMaterialesEInputManoDeObra")
+#     if(lista_materiales == []): raise ValueError("No se puede ingresar lista vacia en registrarListaMaterialesEInputManoDeObra")
 
-    for material in lista_materiales:
-        agregarMaterial(dialog, material)
+#     for material in lista_materiales:
+#         agregarMaterial(dialog, material)
 
-    dialog.input_costo_mano_de_obra.setText(input_costo_de_mano_de_obra)
+#     dialog.input_costo_mano_de_obra.setText(input_costo_de_mano_de_obra)
 
-    dialog.guardarTodoYCerrar()
+#     dialog.guardarTodoYCerrar()
 
 #test data
 def lista_materiales_aceptados() -> list[Material]:
@@ -192,32 +192,32 @@ def test_05_DialogCrearRegistrosRegistraMasDeUnMaterialEnArchivoInexistente(qtbo
     # assertarContenidoDeArchivoEsElEsperado(archivo, ["Aluminio,3,4.5\n", "Cobre,2,4.6"])
 
 
-def verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog:DialogCrearRegistros, 
-                                                        cantidad_de_materiales_agregados_esperados:int) -> list[str]:
-    labels = dialog.tabla_materiales_registrados.findChildren(QLabel)
+# def ui.verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog:DialogCrearRegistros, 
+#                                                         cantidad_de_materiales_agregados_esperados:int) -> list[str]:
+#     labels = dialog.tabla_materiales_registrados.findChildren(QLabel)
 
-    cantidad_secciones = 3
+#     cantidad_secciones = 3
 
-    assert len(labels) == cantidad_secciones + 3 * cantidad_de_materiales_agregados_esperados #por los de sección y un material
+#     assert len(labels) == cantidad_secciones + 3 * cantidad_de_materiales_agregados_esperados #por los de sección y un material
 
-    labels_datos = [l.text() for l in labels]
+#     labels_datos = [l.text() for l in labels]
 
-    assert "Material" in labels_datos
-    assert "Densidad (Kg/dm3)" in labels_datos
-    assert "Precio (US$)" in labels_datos
+#     assert "Material" in labels_datos
+#     assert "Densidad (Kg/dm3)" in labels_datos
+#     assert "Precio (US$)" in labels_datos
 
-    return labels_datos
+#     return labels_datos
 
 
 def test_06_DialogCrearRegistrosNoMuestraMaterialesSiArchivoInexistente(qtbot, tmpdir, monkeypatch):
 
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
                                                      lambda dialog, archivo: 
-                        verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, 0))
+                        ui.verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, 0))
 
 
 def verificarQueSeMuestranLosMaterialesAgregados(dialog, materiales_agregados_esperados:list[Material]):
-    labels_datos = verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, len(materiales_agregados_esperados))
+    labels_datos = ui.verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, len(materiales_agregados_esperados))
 
     for material in materiales_agregados_esperados:
         assert material.nombre in labels_datos
@@ -238,7 +238,7 @@ def agregarMaterialesYVerificarQueFueronGuardadosYMostrados(dialog:DialogCrearRe
         verificarQueSeMuestranLosMaterialesAgregados(dialog,  materiales_a_agregar[:index+1])
 
 def agregarMaterialesAceptadosYVerificarQueSonGuardadosYMostrados(dialog:DialogCrearRegistros, archivo:str):
-    agregarMaterialesYVerificarQueFueronGuardadosYMostrados(dialog, archivo, lista_materiales_aceptados())
+    agregarMaterialesYVerificarQueFueronGuardadosYMostrados(dialog, archivo, com_cot.lista_materiales_aceptada)
 
 def test_07_DialogCrearRegistrosMuestraMaterialesAgregados(qtbot, tmpdir, monkeypatch):
 
@@ -291,61 +291,70 @@ def test_10_DialogCrearRegistroNoRegistraSinPrecioDeManoDeObraAsignado(qtbot, tm
 
  
 
-def verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo):
-    lista_registros = [Material("Aluminio","3.4","3"), Material("Acero","3.4","4")]
+# def ui.verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo):
 
-    registrarListaMaterialesEInputManoDeObra(dialog, lista_registros, "3")
+#     registrarListaMaterialesEInputManoDeObra(dialog, com_cot.lista_materiales_aceptada, 
+#                                              com_cot.mano_de_obra_aceptada.precio_str())
 
-    lista_registros.append(ManoDeObra(3))
-
-    ui.assertarContenidoDeArchivoEsElEsperado(archivo, com_cot.pasarListaRegistrosALineasParaArchivo(lista_registros))
+#     com_cot.assertarContenidoDeArchivoEsElEsperado(archivo, 
+#                                 com_cot.pasarListaRegistrosALineasParaArchivo(com_cot.lista_registros_aceptada))
 
 def test_11_DialogCrearRegistroRegistraMaterialesAgregadosYManoDeObra(qtbot, tmpdir, monkeypatch):
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
-        lambda dialog, archivo: verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo))
+        lambda dialog, archivo: ui.verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo))
 
 
 
-def verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(dialog, archivo, 
+def verificarQueDialogNoSeCierreYLanceDialogDeErrorAlIngresarInput(qtbot, dialog:DialogCrearRegistros, 
+                                                                   lista_registros:list[RegistroDeCosto], archivo:str, 
+        input_costo_mano_de_obra:str, descripcion_de_dialog_de_error_esperada:str):
+    
+    with qtbot.assertNotEmitted(dialog.accepted):
+
+        ui.registrarListaMaterialesEInputManoDeObra(dialog, lista_registros, input_costo_mano_de_obra)
+
+        verificarQueDialogDeErrorDeDialogTengaComoDescripcion(dialog, 
+                                        descripcion_de_dialog_de_error_esperada)
+
+        ui.assertarArchivoInexistente(archivo)
+
+def verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(qtbot, dialog, archivo, 
                                                                             input_invalido_costo_mano_de_obra: str):
-    lista_registros = [Material("Aluminio","3.4","3"), Material("Acero","3.4","4")]
+    lista_registros = [Material("Aluminio 5083", "3", "3"), Material("Aluminio","3.4","3"), Material("Acero","3.4","4")]
 
-    registrarListaMaterialesEInputManoDeObra(dialog, lista_registros, input_invalido_costo_mano_de_obra)
+    verificarQueDialogNoSeCierreYLanceDialogDeErrorAlIngresarInput(qtbot, dialog, lista_registros, archivo, 
+                                                                   input_invalido_costo_mano_de_obra, 
+        ManoDeObra.PrecioInvalidoDescripcionDeError(input_invalido_costo_mano_de_obra))
 
-    verificarQueDialogDeErrorDeDialogTengaComoDescripcion(dialog, 
-                                        ManoDeObra.PrecioInvalidoDescripcionDeError(input_invalido_costo_mano_de_obra))
-
-    ui.assertarArchivoInexistente(archivo)
-
-def test_12_DialogCrearRegistroNoCreaRegistroLevantaDialogDeErrorAlIngresarCostoDeManoDeObraValueError(qtbot, 
+def test_12_DialogCrearRegistroNoCreaRegistroYLevantaDialogDeErrorAlIngresarCostoDeManoDeObraValueError(qtbot, 
                                                                                                        tmpdir, monkeypatch):
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
         lambda dialog, archivo: 
-        verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(dialog, archivo, "-3"))
+        verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(qtbot, dialog, archivo, "-3"))
 
 
 def test_13_DialogCrearRegistroNoCreaRegistroLevantaDialogDeErrorAlIngresarCostoDeManoDeObraTypeError(qtbot, 
                                                                                                       tmpdir, monkeypatch):
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
         lambda dialog, archivo: 
-        verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(dialog, archivo, "a"))
+        verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(qtbot, dialog, archivo, "a"))
     
 
-def verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, dialog, archivo):
-    verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo)
-    qtbot.wait(10)
-    verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, 0)
+# def ui.verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, dialog, archivo):
+#     verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo)
+#     qtbot.wait(10)
+#     verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, 0)
 
-    assert dialog.input_material.text() == ""
-    assert dialog.input_densidad.text() == ""
-    assert dialog.input_precio.text() == ""
-    assert dialog.input_costo_mano_de_obra.text() == ""
+#     assert dialog.input_material.text() == ""
+#     assert dialog.input_densidad.text() == ""
+#     assert dialog.input_precio.text() == ""
+#     assert dialog.input_costo_mano_de_obra.text() == ""
 
-    assert dialog.accepted 
+#     assert dialog.accepted 
 
 def test_14_DialogCrearRegistroReseteaLaTablaDeMaterialesAlGuardarTodo(qtbot, tmpdir, monkeypatch):
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
-        lambda dialog, archivo: verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, dialog, archivo))
+        lambda dialog, archivo: ui.verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, dialog, archivo))
 
 def test_15_DialogCrearRegistrosSeAbreAlAbrirArchivoVacio(qtbot, tmpdir, monkeypatch):
     
@@ -355,8 +364,32 @@ def test_15_DialogCrearRegistrosSeAbreAlAbrirArchivoVacio(qtbot, tmpdir, monkeyp
 
     dialog = ventana.dialogParaCrearRegistro
 
-    verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, dialog, archivo)
+    ui.verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, dialog, archivo)
     
-
-
 #No hacer el scroll porque no hace falta, max 10 materiales 
+
+
+def verificarQueDialogLanceErrorAlRegistrarSinAluminio5083(qtbot, dialog:DialogCrearRegistros, archivo:str, ):
+
+    lista_registros = [Material("Aluminio","3.4","3"), Material("Acero","3.4","4")]
+
+    verificarQueDialogNoSeCierreYLanceDialogDeErrorAlIngresarInput(qtbot, dialog, 
+                                                                   lista_registros, archivo, "4", 
+                                                            cotizador.noSePuedeRegistrarSiElAluminio5083NoEstaAgregado())
+
+
+def test_16_DialogCrearRegistrosNoCreaRegistroYLevantaDialogDeErrorAlNoIngresarAluminio5083(qtbot, tmpdir, monkeypatch):
+    crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
+        lambda dialog, archivo: 
+        verificarQueDialogLanceErrorAlRegistrarSinAluminio5083(qtbot, dialog, archivo))
+
+def verificarQueDialogLanceErrorSinAluminio5083DosVecesAlApretarGuardarTodoDosVeces(qtbot, dialog, archivo):
+    verificarQueDialogLanceErrorAlRegistrarSinAluminio5083(qtbot, dialog, archivo)
+
+    verificarQueDialogLanceErrorAlRegistrarSinAluminio5083(qtbot, dialog, archivo)
+
+def test_17_DialogCrearRegistrosLanzaElMismoErrorAlNoPonerElAluminioyGuardarDosVeces(qtbot, tmpdir, monkeypatch):
+    crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
+        lambda dialog, archivo: 
+        verificarQueDialogLanceErrorSinAluminio5083DosVecesAlApretarGuardarTodoDosVeces(qtbot, dialog, archivo))
+
