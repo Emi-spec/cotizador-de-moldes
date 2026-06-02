@@ -7,6 +7,7 @@ DialogCrearRegistros, cotizador, Material, ManoDeObra, ventana_cotizador)
 
 def crearDialogSobreArchivoYEjecutarAccion(qtbot, monkeypatch, archivo:str, 
                                            accionSobreDialogYArchivo:Callable[[DialogCrearRegistros, str], None]):
+
     ventana = ui.crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
 
     dialog = ventana.dialogParaCrearRegistro
@@ -192,22 +193,6 @@ def test_05_DialogCrearRegistrosRegistraMasDeUnMaterialEnArchivoInexistente(qtbo
     # assertarContenidoDeArchivoEsElEsperado(archivo, ["Aluminio,3,4.5\n", "Cobre,2,4.6"])
 
 
-# def ui.verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog:DialogCrearRegistros, 
-#                                                         cantidad_de_materiales_agregados_esperados:int) -> list[str]:
-#     labels = dialog.tabla_materiales_registrados.findChildren(QLabel)
-
-#     cantidad_secciones = 3
-
-#     assert len(labels) == cantidad_secciones + 3 * cantidad_de_materiales_agregados_esperados #por los de sección y un material
-
-#     labels_datos = [l.text() for l in labels]
-
-#     assert "Material" in labels_datos
-#     assert "Densidad (Kg/dm3)" in labels_datos
-#     assert "Precio (US$)" in labels_datos
-
-#     return labels_datos
-
 
 def test_06_DialogCrearRegistrosNoMuestraMaterialesSiArchivoInexistente(qtbot, tmpdir, monkeypatch):
 
@@ -217,7 +202,8 @@ def test_06_DialogCrearRegistrosNoMuestraMaterialesSiArchivoInexistente(qtbot, t
 
 
 def verificarQueSeMuestranLosMaterialesAgregados(dialog, materiales_agregados_esperados:list[Material]):
-    labels_datos = ui.verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, len(materiales_agregados_esperados))
+    labels_datos = ui.verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, 
+                                                                                    len(materiales_agregados_esperados))
 
     for material in materiales_agregados_esperados:
         assert material.nombre in labels_datos
@@ -289,15 +275,7 @@ def test_10_DialogCrearRegistroNoRegistraSinPrecioDeManoDeObraAsignado(qtbot, tm
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
         lambda dialog, archivo: verificarQueDialogLanceErrorAlGuardarMaterialesSinPrecioManoDeObra(dialog, archivo))
 
- 
 
-# def ui.verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo):
-
-#     registrarListaMaterialesEInputManoDeObra(dialog, com_cot.lista_materiales_aceptada, 
-#                                              com_cot.mano_de_obra_aceptada.precio_str())
-
-#     com_cot.assertarContenidoDeArchivoEsElEsperado(archivo, 
-#                                 com_cot.pasarListaRegistrosALineasParaArchivo(com_cot.lista_registros_aceptada))
 
 def test_11_DialogCrearRegistroRegistraMaterialesAgregadosYManoDeObra(qtbot, tmpdir, monkeypatch):
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 

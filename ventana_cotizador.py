@@ -13,7 +13,7 @@ from cotizador_para_moldes_de_soplado import (Material, ManoDeObra, RegistroDeCo
 
 ARCHIVO_REGISTROS = "nada.txt"
 
-def crearLineEdit(placeHolderText:str) -> QLabel:
+def crearLineEdit(placeHolderText:str) -> QLineEdit:
     input = QLineEdit()
     input.setPlaceholderText(placeHolderText)
     input.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Maximum)
@@ -37,8 +37,9 @@ class Ventana(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Cotizador para moldes de Soplado")
-       
 
+        # cargar_ventana debería estar integrado acá dentro pero hace que se abran en ventana cuando corren tests 
+    
     def cargar_ventana(self):
         
         # 👉 Widget central
@@ -79,6 +80,14 @@ class Ventana(QMainWindow):
     def ejecutarDialogCrearRegistros(self):
         self.dialogParaCrearRegistro = DialogCrearRegistros(self)
         self.dialogParaCrearRegistro.exec()
+
+        # if self.dialogParaCrearRegistro.exec() == QDialog.DialogCode.Accepted:
+        #     # Volvemos a leer el archivo ahora que tiene datos
+        #     self.lista_registros = cotizador.crear_lista_registros_a_partir_de(ARCHIVO_REGISTROS)
+        #     # Limpiamos los labels viejos (solo los encabezados) y redibujamos todo
+        #     self.limpiar_layout(self.layout_materiales_registrados)
+        #     self.agregarSeccionesCaracteristicasMaterial()
+        #     self.cargarMaterialesRegistradosEInputsPrecios()
 
     def cargarMaterialesRegistradosEInputsPrecios(self):
         self.input_precios:dict[RegistroDeCosto, QLineEdit] = {}
@@ -346,64 +355,94 @@ class Ventana(QMainWindow):
         #                          float(self.input_ancho_mitad.text()),
         #                              )
         
-    def xxx(self, nombre_archivo):
-        try: 
-            if(os.path.getsize(nombre_archivo) == 0):
-                self.ejecutarDialogCrearRegistros()
-            #     lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
-            #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
-                return False
-            else:
-                cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
-                return True
+    # def xxx(self, nombre_archivo):
+    #     try: 
+    #         if(os.path.getsize(nombre_archivo) == 0):
+    #             self.ejecutarDialogCrearRegistros()
+    #         #     lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+    #         #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
+    #             return False
+    #         else:
+    #             cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+    #             return True
 
-        except (FileNotFoundError):
+        # except (FileNotFoundError):
             
-            self.ejecutarDialogCrearRegistros()
-            #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
-            # lista_registros:list[Material] = []
-            return False
+        #     self.ejecutarDialogCrearRegistros()
+        #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
+        #     # lista_registros:list[Material] = []
+        #     return False
 
-        except (ValueError) as descripcion_de_error:
-            self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
+        # except (ValueError) as descripcion_de_error:
+        #     self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
 
-            self.ejecutarDialogCrearRegistros()
-            return False
-            #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
-            # lista_registros:list[Material] = []
+        #     self.ejecutarDialogCrearRegistros()
+        #     return False
+        #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
+        #     # lista_registros:list[Material] = []
 
-            #lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+        #     #lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
 
     def cargar_lista_registros(self, nombre_archivo:str):
+        try: 
+            # 1. Si el archivo no existe o está vacío, abrimos el creador una única vez
+            if not os.path.exists(nombre_archivo) or os.path.getsize(nombre_archivo) == 0:
+                self.ejecutarDialogCrearRegistros()
+                # Tras cerrarse el diálogo, intentamos cargar lo que el usuario guardó
+                if os.path.exists(nombre_archivo) and os.path.getsize(nombre_archivo) > 0:
+                    return cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+                return []
+
+            # 2. Si el archivo tiene contenido, intentamos procesarlo normalmente
+            return cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+
+        except (FileNotFoundError):
+            self.ejecutarDialogCrearRegistros()
+            return []
+
+        except (ValueError) as descripcion_de_error:
+            # Aquí cae tu Test 2: Muestra el error avisando que el archivo está corrupto
+            self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
+            # Abre el diálogo para que el usuario cree datos nuevos y pise el archivo roto
+            self.ejecutarDialogCrearRegistros()
+            
+            # Intentamos retornar los registros nuevos generados post-diálogo
+            try:
+                if os.path.exists(nombre_archivo) and os.path.getsize(nombre_archivo) > 0:
+                    return cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+            except Exception:
+                pass
+            
+            return []
 
         # zzz:bool = False
 
         # while not zzz:
-        #     zzz = self.xxx() 
+        #     zzz = self.xxx(nombre_archivo) 
 
-        try: 
-            if(os.path.getsize(nombre_archivo) == 0):
-                self.ejecutarDialogCrearRegistros()
-            #     lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
-            #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
-                lista_registros:list[Material] = []
-            else:
-                lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+        # try: 
+        #     if(os.path.getsize(nombre_archivo) == 0):
+        #         self.ejecutarDialogCrearRegistros()
+        #     #     lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+        #     #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
+        #         lista_registros:list[Material] = []
+        #     else:
+        #         lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
 
-        except (FileNotFoundError):
+        # except (FileNotFoundError):
             
-            self.ejecutarDialogCrearRegistros()
-            #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
-            lista_registros:list[Material] = []
+        #     self.ejecutarDialogCrearRegistros()
+        #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
+        #     lista_registros:list[Material] = []
 
-        except (ValueError) as descripcion_de_error:
-            self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
+        # except (ValueError) as descripcion_de_error:
+        #     self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
 
-            self.ejecutarDialogCrearRegistros()
-            #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
-            lista_registros:list[Material] = []
+        #     self.ejecutarDialogCrearRegistros()
+        #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
+        #     lista_registros:list[Material] = []
 
-            #lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+        #     #lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
 
         return lista_registros
 

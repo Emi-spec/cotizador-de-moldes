@@ -94,15 +94,49 @@ def test_01_VentanaMuestraLosRegistrosCorrectamente(qtbot, tmpdir, monkeypatch):
 
 #     verificarQueSeMuestranLosMaterialesAgregados(ventana, ui.lista_materiales_aceptados, ManoDeObra_aceptada)
 
-# def test_01_1_ventanaProyectaLosRegistrosRecienRegistradosPorDialogCrearRegistros(qtbot, tmpdir, monkeypatch):
-#     archivo = tmpdir / "archivo_inexistente.txt"
+def test_01_1_ventanaProyectaLosRegistrosRecienRegistradosPorDialogCrearRegistros(qtbot, tmpdir, monkeypatch):
+    # archivo = tmpdir / "archivo_inexistente.txt"
 
-#     ventana = ui.crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
+    # #breakpoint()
+    # ventana = ui.crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
+    
+    # ui.verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(ventana.dialogParaCrearRegistro, archivo)
+    # #ui.verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, ventana.dialogParaCrearRegistro, archivo)
+    # qtbot.wait(10)
+    # verificarQueSeMuestranLosMaterialesAgregados(ventana, com_cot.lista_materiales_aceptada, com_cot.mano_de_obra_aceptada)
 
-#     ui.verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, ventana.dialogParaCrearRegistro, archivo)
+    archivo = tmpdir / "archivo_inexistente.txt"
 
-#     verificarQueSeMuestranLosMaterialesAgregados(ventana, com_cot.lista_materiales_aceptada, ManoDeObra_aceptada)
-  
+    # Interceptamos el método exec del diálogo para simular la carga del usuario
+    def exec_simulado(dialogo_self):
+        # 1. Ejecutamos la carga de datos que haría el usuario en el diálogo
+        ui.registrarListaMaterialesEInputManoDeObra(
+            dialogo_self,
+            com_cot.lista_materiales_aceptada, 
+            com_cot.mano_de_obra_aceptada.precio_str()
+        )
+        # 2. Retornamos 1 (QDialog.Accepted) para indicar que se pulsó guardar
+        return QDialog.Accepted
+
+    # Aplicamos el parche al DialogCrearRegistros antes de crear la ventana
+    monkeypatch.setattr(DialogCrearRegistros, "exec", exec_simulado)
+
+    # Ahora sí, creamos la ventana. Al intentar abrir el diálogo, correrá nuestro parche
+    ventana = ui.crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
+    qtbot.addWidget(ventana)
+
+    # 3. Verificamos que el archivo se creó correctamente en el disco
+    com_cot.assertarContenidoDeArchivoEsElEsperado(
+        archivo, 
+        com_cot.pasarListaRegistrosALineasParaArchivo(com_cot.lista_registros_aceptada)
+    )
+
+    # 4. Verificamos que la ventana se enteró y dibujó los controles correspondientes
+    verificarQueSeMuestranLosMaterialesAgregados(
+        ventana, 
+        com_cot.lista_materiales_aceptada, 
+        com_cot.mano_de_obra_aceptada
+    )  
 
 
 def abrirVentanaYVerificarQueDialogDeErrorTengaComoDescripcion(qtbot,monkeypatch, archivo:str, descripcion_de_error_esperada:str):
