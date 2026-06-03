@@ -215,6 +215,15 @@ def test_06_creaListaDeVariosMateriales(tmpdir):
     assert not (lista_materiales[0].caracteristicasSon("Aluminio 7075", 2.8, 22.50))
 
 
+def test_06_1_creaListaConAluminioEnMinuscula(tmpdir):
+
+    lista_registros:list[RegistroDeCosto] = com_cot.lista_registros_aceptada.copy()
+
+    lista_registros[1] = Material("aluminio 5083","3","4")
+
+    verificarQueSeRegistrenLosMaterialesCorrectamente(tmpdir, "materiales_correctos.txt", lista_registros)
+
+
 def test_07_manoDeObraSeRegistraCorrectamente(tmpdir):
 
     lista_materiales = verificarQueSeRegistrenLosMaterialesCorrectamente(tmpdir,
@@ -381,7 +390,7 @@ def cotizarConListaRegistroAceptada(input_numero_de_moldes:int|str, input_cantid
 
     cotizador.cotizarEnBaseA(input_numero_de_moldes, input_cantidad_cavidades, False, input_altura, input_volumen,
                             input_distancia_entre_centros, input_ancho_mitad, "a", aluminio_7075, aluminio_7075, 
-                            aluminio_7075, aluminio_7075, aluminio_7075, com_cot.lista_registros_aceptada, ManoDeObra("30"))
+                            aluminio_7075, aluminio_7075, aluminio_7075, com_cot.lista_materiales_aceptada, ManoDeObra("30"))
 
 def cotizarConInputCantDeMoldesInvalido(input_numero_de_moldes:int|str):
 

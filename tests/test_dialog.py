@@ -23,17 +23,10 @@ def crearDialogSobreArchivoVacioYAplicarAccion(qtbot, tmpdir, monkeypatch,
 
 def crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
                                                 accionSobreDialogYArchivo:Callable[[DialogCrearRegistros, str], None]):
-    archivo = tmpdir / "archivo_inexistente.txt"
+    archivo = ui.crearArchivoInexistenteConDireccion(tmpdir)
 
     crearDialogSobreArchivoYEjecutarAccion(qtbot, monkeypatch, archivo, accionSobreDialogYArchivo)
-
-
-# def ui.ingresarInputMaterial(dialog:DialogCrearRegistros, input_nombre:str, input_densidad:str, input_precio:str):
-#     dialog.input_material.setText(input_nombre)
-#     dialog.input_densidad.setText(input_densidad)
-#     dialog.input_precio.setText(input_precio)
-
-#     dialog.agregar_material()      
+      
 
 def ingresarInputYEjecutarDialog(dialog:DialogCrearRegistros, input_nombre:str, input_densidad:str, input_precio:str, 
         accionesSobreDialog:Callable[[DialogCrearRegistros], None]):
@@ -109,18 +102,6 @@ def verificarQueNoSeAgregoMaterial(qtbot, tmpdir, monkeypatch, input_nombre:str,
         lambda dialog,archivo: 
         verificarQueNoSeAgregaronMaterialesNiExistaArchivo(dialog, archivo, input_nombre, input_densidad, input_precio, 
                                             descripcion_de_error_esperada))
-
-
-# def ui.registrarListaMaterialesEInputManoDeObra(dialog, lista_materiales:list[Material], input_costo_de_mano_de_obra:str):
-
-#     if(lista_materiales == []): raise ValueError("No se puede ingresar lista vacia en registrarListaMaterialesEInputManoDeObra")
-
-#     for material in lista_materiales:
-#         agregarMaterial(dialog, material)
-
-#     dialog.input_costo_mano_de_obra.setText(input_costo_de_mano_de_obra)
-
-#     dialog.guardarTodoYCerrar()
 
 #test data
 def lista_materiales_aceptados() -> list[Material]:
@@ -316,19 +297,7 @@ def test_13_DialogCrearRegistroNoCreaRegistroLevantaDialogDeErrorAlIngresarCosto
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 
         lambda dialog, archivo: 
         verificarQueAlIngresarInputInvalidoDeManoDeObraDialogLanceDialogDeError(qtbot, dialog, archivo, "a"))
-    
 
-# def ui.verificarQueSeReseteaLaTablaDeMaterialesAlGuardar(qtbot, dialog, archivo):
-#     verificarQueLosRegistrosDeCostoAceptadosSeRegistrenCorrectamente(dialog, archivo)
-#     qtbot.wait(10)
-#     verificarQueSeMuestrenSeccionesYCantidadDeMaterialesMostrados(dialog, 0)
-
-#     assert dialog.input_material.text() == ""
-#     assert dialog.input_densidad.text() == ""
-#     assert dialog.input_precio.text() == ""
-#     assert dialog.input_costo_mano_de_obra.text() == ""
-
-#     assert dialog.accepted 
 
 def test_14_DialogCrearRegistroReseteaLaTablaDeMaterialesAlGuardarTodo(qtbot, tmpdir, monkeypatch):
     crearDialogSobreArchivoInexistenteYAplicarAccion(qtbot, tmpdir, monkeypatch, 

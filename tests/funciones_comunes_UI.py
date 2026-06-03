@@ -32,24 +32,29 @@ def crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo:str, monkeypatch) -> Ven
     #tiene que devolver la ventana y no el dialogo poruqe si destruye la ventana destruye el dialogo también
     return ventana
 
-# def crearVentanaParaTestLeyendoDeArchivoInexistente(tmpdir, qtbot, monkeypatch) -> Ventana:
-#     archivo = tmpdir / "archivo_inexistente.txt"
+def crearArchivoInexistenteConDireccion(tmpdir) -> str:
+    return tmpdir / "archivo_inexistente.txt"
 
-#     ventana = crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
+def simularExecDeDialogCrearRegistrosCon(monkeypatch, reemplazo_de_exec:Callable[[], None]):
+    # Interceptamos el método exec del diálogo para simular la carga del usuario
+    def mock_exec(dialog_self):
+        reemplazo_de_exec(dialog_self)
+        return QDialog.Accepted # Simulamos que el usuario dio "OK"
 
-#     return ventana
+   # # Reemplazamos QDialog.exec() (de cualquier dialogo por mock_exec)
+    monkeypatch.setattr(DialogCrearRegistros, "exec", mock_exec)
+
 
 def verificarQueDialogCrearRegistrosSeEjecuteHaciendo(monkeypatch, accionQueDisparaDialog:Callable[[], None]):
-# Variable para rastrear si se llamó al diálogo
+    # Variable para rastrear si se llamó al diálogo
     was_called = False
 
-    def mock_exec(self):
+    # 1. Definimos una función normal en lugar de la lambda
+    def registrar_llamada():
         nonlocal was_called
         was_called = True
-        return DialogCrearRegistros.Accepted # Simulamos que el usuario dio "OK"
 
-    # Reemplazamos QDialog.exec() (de cualquier dialogo por mock_exec) 
-    monkeypatch.setattr(DialogCrearRegistros, "exec", mock_exec)
+    simularExecDeDialogCrearRegistrosCon(monkeypatch, lambda dialog_self: registrar_llamada())
 
     # Disparamos la acción que debería abrir el diálogo
     accionQueDisparaDialog()
@@ -65,19 +70,10 @@ def verificarQueDialogDeErrorDeDialogTengaComoDescripcion(dialogDescripcionDeErr
 
 ManoDeObra_aceptada:ManoDeObra = ManoDeObra("35")
 
-lista_materiales_aceptados:list[Material] = [Material("Aluminio 5083","2.8","19"),
-                                             Material("Acero Amutit","8","7.5"), 
-                                             Material("Acero Inoxidable","8","16")]
-
-
-
-lista_registros_aceptados:list[RegistroDeCosto] = lista_materiales_aceptados.copy()
-lista_registros_aceptados.append(ManoDeObra_aceptada)
-
 def abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch, 
                                                                accionesYVerificaciones:Callable[[Ventana, str], None]):
     archivo = crearArchivoConContenido(tmpdir, "archivo_registros.txt", 
-                                          com_cot.pasarListaRegistrosATexto(lista_registros_aceptados))
+                                          com_cot.pasarListaRegistrosATexto(com_cot.lista_registros_aceptada))
 
     ventana = crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
 

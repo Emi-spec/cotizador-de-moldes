@@ -8,10 +8,18 @@ import os
 
 from collections.abc import Callable
 import cotizador_para_moldes_de_soplado as cotizador
-from cotizador_para_moldes_de_soplado import (Material, ManoDeObra, RegistroDeCosto,
-        nivelDeDificultadBajo, nivelDeDificultadMedio, nivelDeDificultadAlto, nivelDeDificultadMuyAlto, nivelDeDificultadEspeciales)
+from cotizador_para_moldes_de_soplado import (Material, ManoDeObra, RegistroDeCosto, NivelDeDificultad,
+            nivelDeDificultadBajo, nivelDeDificultadMedio, nivelDeDificultadAlto, nivelDeDificultadMuyAlto, 
+            nivelDeDificultadEspeciales)
 
 ARCHIVO_REGISTROS = "nada.txt"
+
+def esMedidaValida(medida_en_str:str):
+    if(cotizador.es_float_estricto(medida_en_str)):
+        return (float(medida_en_str) >0)
+    else: 
+        return False
+
 
 def crearLineEdit(placeHolderText:str) -> QLineEdit:
     input = QLineEdit()
@@ -26,9 +34,9 @@ def crearMenuDesplegable(opciones:list[str]) -> QComboBox:
     
     return menu
 
-def crearBoton(texto:str, xxx:Callable[[], None]):
+def crearBoton(texto:str, accionProducidaPorBoton:Callable[[], None]):
         boton = QPushButton(texto)
-        boton.clicked.connect(xxx)
+        boton.clicked.connect(accionProducidaPorBoton)
 
         return boton
 
@@ -233,28 +241,11 @@ class Ventana(QMainWindow):
 
     def AsignarInputsDeEleccionDeMaterialesAlLayout(self, layout_padre:QGridLayout):
                 
-        lista_nombre_materiales = [
-    "Alejandro",
-    "Mateo",
-    "Santiago",
-    "Daniel",
-    "Sebastián",
-    "Lucas",
-    "Benjamín",
-    "Matías",
-    "Nicolás",
-    "Samuel",
-    "Gabriel",
-    "Tomás",
-    "Joaquín",
-    "Diego",
-    "Leonardo",
-    "Adrián"
-]              
+        lista_nombre_materiales:list[str] = [registro.nombre for registro in self.lista_registros if registro.esMaterial()]
+             
         #postizos de cuerpo 
         self.input_postizos_cuerpo = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, "Postizos de cuerpo: ", 
                                                           lista_nombre_materiales, 0)
-
 
         #Postizos de cuello
         self.input_postizos_cuello = self.crearCaracteristicaAElegirConMenuDesplegable(layout_padre, "Postizos de cuello: ", 
@@ -316,12 +307,33 @@ class Ventana(QMainWindow):
             lambda: self.ejecutarDialogDeErrorConDescripcion(descripcion_de_error),
             lambda: self.ejecutarDialogDeErrorConDescripcion(descripcion_de_error))
 
-    # def xxx(self, input:str, descripcion_de_error_con_input:Callable[[str], str]):
-    #     self.ejecutarDialogDeErrorSiInputNumericoInvalido(input, 
-    #             descripcion_de_error_con_input(input))
 
-    def cotizar(self):
-        
+    def seleccionarMaterialDelMenuDesplegable(self, menu_desplagable_con_materiales:QComboBox):
+        nombre = menu_desplagable_con_materiales.currentText() 
+        material_elegido:Material = None
+
+        for material in self.lista_registros:
+            if(material.tieneComoNombre(nombre) and material_elegido == None):
+                material_elegido = material
+            elif(material.tieneComoNombre(nombre) and material_elegido != None):
+                raise ValueError(f"Hay dos materiales con el nombre {material_elegido.nombre} en ventana.lista_registros")
+
+        return material_elegido
+
+    def inputsSonCorrectos(self):
+        todos_inputs_correctos:bool = True
+
+        if (not esMedidaValida(self.input_altura_envase.text())):
+            todos_inputs_correctos = False
+        if (not esMedidaValida(self.input_volumen_envase.text())):
+            todos_inputs_correctos = False
+        if (not esMedidaValida(self.input_distancia_centros.text())):
+            todos_inputs_correctos = False
+        if (not esMedidaValida(self.input_distancia_centros.text())):
+            todos_inputs_correctos = False
+        if (not esMedidaValida(self.input_ancho_mitad.text())):
+            todos_inputs_correctos = False
+
         self.ejecutarDialogDeErrorSiInputNumericoInvalido(self.input_altura_envase.text(), 
                 cotizador.alturaDeEnvaseInvalidaDescripcionDeError(self.input_altura_envase.text()))
 
@@ -339,49 +351,73 @@ class Ventana(QMainWindow):
            not self.opcion_nivel_alto.isChecked() and
            not self.opcion_nivel_muy_alto.isChecked() and
            not self.opcion_nivel_especiales.isChecked()):
-            self.ejecutarDialogDeErrorConDescripcion(cotizador.NoSeEligioUnNivelDeDificultadDelEnvaseDescripcionDeError())
-
-        if(self.input_mascaras_troqueles.currentText() == "si"):
-            mascaras_troqueles:bool = True
-        else: 
-            mascaras_troqueles:bool = False
-
-        # cotizador.cotizarEnBaseA(int(self.input_cantidad_moldes.currentText()), 
-        #                          int(self.input_cantidad_cavidades.currentText()),
-        #                          mascaras_troqueles,
-        #                          float(self.input_altura_envase.text()),
-        #                          float(self.input_volumen_envase.text()),
-        #                          float(self.input_distancia_centros.text()),
-        #                          float(self.input_ancho_mitad.text()),
-        #                              )
+           todos_inputs_correctos = False
+           self.ejecutarDialogDeErrorConDescripcion(cotizador.NoSeEligioUnNivelDeDificultadDelEnvaseDescripcionDeError())
         
-    # def xxx(self, nombre_archivo):
-    #     try: 
-    #         if(os.path.getsize(nombre_archivo) == 0):
-    #             self.ejecutarDialogCrearRegistros()
-    #         #     lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
-    #         #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
-    #             return False
-    #         else:
-    #             cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
-    #             return True
+        return todos_inputs_correctos
 
-        # except (FileNotFoundError):
+    def cotizar(self):
+
+        if(self.inputsSonCorrectos()):
+
+            if(self.input_mascaras_troqueles.currentText() == "si"):
+                mascaras_troqueles:bool = True
+            else: 
+                mascaras_troqueles:bool = False
+
+            #dificultad
+            if(self.opcion_nivel_bajo.isChecked()):
+                dificultad = nivelDeDificultadBajo
+            if(self.opcion_nivel_medio.isChecked()):
+                dificultad = nivelDeDificultadMedio
+            if(self.opcion_nivel_alto.isChecked()):
+                dificultad = nivelDeDificultadAlto
+            if(self.opcion_nivel_muy_alto.isChecked()):
+                dificultad = nivelDeDificultadMuyAlto
+            if(self.opcion_nivel_especiales.isChecked()):
+                dificultad = nivelDeDificultadEspeciales
+
+            #opciones de materiales
+            # nombre = self.input_postizos_cuerpo().currentText() 
+
+            # for material in self.lista_registros:
+            #     if(material.tieneComoNombre(nombre)):
+            #         material_postizos_cuerpo = material
+            #breakpoint()
+            material_postizos_cuerpo:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_postizos_cuerpo) 
+            material_postizos_cuello:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_postizos_cuello)
+            material_postizos_fondo:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_postizos_fondo)
+            material_placas_respaldo:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_placas_respaldo)
+            material_prensamangas:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_prensamangas)  
+
+            for registro in self.lista_registros:
+                if(registro.esManoDeObra()):
+                    mano_de_obra:ManoDeObra = registro
+
+            lista_materiales:list[Material] = [material for material in self.lista_registros if registro.esMaterial()]
             
-        #     self.ejecutarDialogCrearRegistros()
-        #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
-        #     # lista_registros:list[Material] = []
-        #     return False
+            resultado_cotizacion = cotizador.cotizarEnBaseA(int(self.input_cantidad_moldes.currentText()), 
+                                    int(self.input_cantidad_cavidades.currentText()),
+                                    mascaras_troqueles,
+                                    float(self.input_altura_envase.text()),
+                                    float(self.input_volumen_envase.text()),
+                                    float(self.input_distancia_centros.text()),
+                                    float(self.input_ancho_mitad.text()),
+                                    dificultad,
+                                    material_postizos_cuerpo,
+                                    material_postizos_cuello,
+                                    material_postizos_fondo, 
+                                    material_placas_respaldo, 
+                                    material_prensamangas,
+                                    lista_materiales,
+                                    mano_de_obra)
+            
+            self.limpiar_layout(self.layout_general) 
 
-        # except (ValueError) as descripcion_de_error:
-        #     self.ejecutarDialogDeErrorConDescripcion(str(descripcion_de_error))
+            resultados_impresos = QLabel(resultado_cotizacion.imprimirResultado())
 
-        #     self.ejecutarDialogCrearRegistros()
-        #     return False
-        #     #lista_registros:list[Material] = self.cargar_lista_registros(nombre_archivo)
-        #     # lista_registros:list[Material] = []
-
-        #     #lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
+            self.layout_general.addWidget(resultados_impresos)
+        
 
     def cargar_lista_registros(self, nombre_archivo:str):
         try: 
@@ -444,7 +480,7 @@ class Ventana(QMainWindow):
 
         #     #lista_registros:list[Material] = cotizador.crear_lista_registros_a_partir_de(nombre_archivo)
 
-        return lista_registros
+        # return lista_registros
 
     def agregarSeccionesCaracteristicasMaterial(self):
         seccion_nombre_material = QLabel("Material")

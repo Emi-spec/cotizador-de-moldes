@@ -1,7 +1,7 @@
 import math
 from collections.abc import Callable
 from dataclasses import dataclass, field
-#from ventana_cotizador import Ventana
+#from ventana_r import Ventana
 
 
 def es_float_estricto(cadena) -> bool:
@@ -462,7 +462,7 @@ nivelDeDificultadEspeciales = NivelDeDificultad("Especiales\t(asimétricos, con 
 
 
 @dataclass(frozen=True)
-class YYY():
+class ResultadoCotizacion():
     diccionario_costos_material:dict[Material, float]
     costo_total:float
     costo_mat:float
@@ -477,7 +477,7 @@ Costos de cada material (total: {self.costo_mat:.2f} US$): \n'''
         #costos de cada material
         for material, costo in self.diccionario_costos_material.items():
             #print(self.diccionario_costos_material[material].nombre +f": {costo:.2f} US$")
-            info_a_imprimir = info_a_imprimir+ self.diccionario_costos_material[material].nombre +f": {costo:.2f} US$\n"
+            info_a_imprimir = info_a_imprimir+ material.nombre +f": {costo:.2f} US$\n"
 
         info_a_imprimir = info_a_imprimir+f'''\nElementos STD, tornilleria, o'rings, etc: {self.gastos_varios} US$\n
 HORAS DE TRABAJO: {self.horas_trabajo}hs\n
@@ -668,9 +668,10 @@ def verificarMedidaValida(input:int|str, descripcion_de_error:str):
 
     verificarQueInputNumericoSeaPositivoLanzandoErrorConDescripcion(input, descripcion_de_error)
 
-def cotizarEnBaseA(n_moldes:int, n_cavidades:int, mascaras_troqueles:bool, altura:int, volumen:int, dist_entre_centros:int, 
-        ancho_mitad:int, dificultad:str, mat_post_cuerpo:Material, mat_post_cuello:Material, mat_post_fondo:Material, 
-        mat_placas_respaldo:Material, mat_post_prensa:Material, dic_materiales:list[Material], mano_de_obra:ManoDeObra):
+def cotizarEnBaseA(n_moldes:int, n_cavidades:int, mascaras_troqueles:bool, altura:str, volumen:str, dist_entre_centros:str, 
+        ancho_mitad:str, dificultad:NivelDeDificultad, mat_post_cuerpo:Material, mat_post_cuello:Material, 
+        mat_post_fondo:Material, mat_placas_respaldo:Material, mat_post_prensa:Material, dic_materiales:list[Material], 
+        mano_de_obra:ManoDeObra):
 
 
     verificarQueInputSeaNumericoLanzandoErrorConDescripcion(n_moldes, 
@@ -713,10 +714,18 @@ def cotizarEnBaseA(n_moldes:int, n_cavidades:int, mascaras_troqueles:bool, altur
     horas_mas_troq:float = 0
     costo_al_5083:float = 0
 
+    #breakpoint() #Aluminio 5083
+    for material in dic_materiales:
+        if(material.tieneComoNombre("Aluminio 5083")):
+            aluminio_5083 = material
+
+    # if(aluminio_5083 == None):
+    #     raise ValueError("El Material aluminio 5083 no esta en dic_materiales")
+
     if mascaras_troqueles:
         tupla_selec:tuple[int,float] = cav_al[n_cavidades]
         horas_mas_troq = tupla_selec[0]
-        #costo_al_5083 = tupla_selec[1] * dic_materiales["a"][2]
+        costo_al_5083 = tupla_selec[1] * aluminio_5083.precio
 
     #características del molde
 
@@ -747,11 +756,10 @@ def cotizarEnBaseA(n_moldes:int, n_cavidades:int, mascaras_troqueles:bool, altur
     # dificultad = verificar_clave(dificultad, ["a","b","c","d","e"])
 
     #horas de trabajo
-
     #tabla de horas
 
-    horas_cavidades:dict[int,int] = {1:70,2:120,3:165,4:205,5:243,6:281,7:318,8:355,9:392,10:429}
-    horas_de_trabajo:int = horas_cavidades[n_cavidades]
+    horas_por_cavidad:dict[int,int] = {1:70,2:120,3:165,4:205,5:243,6:281,7:318,8:355,9:392,10:429}
+    horas_de_trabajo:int = horas_por_cavidad[n_cavidades]
 
     if n_moldes == 2: 
         horas_de_trabajo *= 1.92
@@ -799,7 +807,6 @@ def cotizarEnBaseA(n_moldes:int, n_cavidades:int, mascaras_troqueles:bool, altur
     precio_post_cuerpo:float = ((dist_entre_centros * n_cavidades) + 60)* (altura - 25) * 58 * 0.000001 * 2 * mat_post_cuerpo.densidad * mat_post_cuerpo.precio * 1.1 
 
     lista_mat_costos.append((mat_post_cuerpo,precio_post_cuerpo))
-
 
     # mat_post_cuello:str = input("\n-Postizos de cuello"+str_opciones_sinM+":\n") 
     # mat_post_cuello = verificar_clave(mat_post_cuello, lista_claves_sinM) 
@@ -859,7 +866,7 @@ def cotizarEnBaseA(n_moldes:int, n_cavidades:int, mascaras_troqueles:bool, altur
     mano_obra:float = horas_de_trabajo * mano_de_obra.precio
     precio_total:float = round(mano_obra + costo_total) 
 
-    return YYY(dic_costos_por_material, costo_total, costo_de_materiales, gastos_varios, horas_de_trabajo, precio_total)
+    return ResultadoCotizacion(dic_costos_por_material, costo_total, costo_de_materiales, gastos_varios, horas_de_trabajo, precio_total)
     #probablemente esta parte no entre en la función
     #IMPRESIÓN FINAL
         
