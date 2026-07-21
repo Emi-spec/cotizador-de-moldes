@@ -1,7 +1,8 @@
 from . import (pytest, Callable, RegistroDeCosto, cotizador, Material, ManoDeObra)
+import os
 
-def assertarArchivoInexistente(archivo:str):
-    assert not archivo.exists()
+def assertarArchivoInexistente(ruta:str):
+    assert not os.path.isfile(ruta)
 
 def crearDireccionDeArchivoInexistente(tmpdir, nombre_archivo:str) -> str:
     archivo = tmpdir / nombre_archivo
@@ -23,7 +24,7 @@ def crearArchivoConContenido(tmpdir, nombre_archivo:str, contenido:str) -> str:
 
     return archivo
 
-def extraerSoloRegistros(lineas_archivo:list[str]):
+def extraerRegistrosSinSaltosDeLinea(lineas_archivo:list[str]) -> list[str]:
 
     linea_registros:list[str] = []
 
@@ -56,8 +57,8 @@ def assertarContenidoDeArchivoEsElEsperado(archivo:str, contenido_esperado:list[
     #chequeo de correctamente identado(?)
     verificarSaltosDeLineaCorrectos(lineas_archivo)
 
-    registros_archivo = extraerSoloRegistros(lineas_archivo)
-    registros_esperados = extraerSoloRegistros(contenido_esperado)
+    registros_archivo = extraerRegistrosSinSaltosDeLinea(lineas_archivo)
+    registros_esperados = extraerRegistrosSinSaltosDeLinea(contenido_esperado)
 
     for registro in registros_archivo:
         assert registro in registros_esperados

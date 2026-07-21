@@ -1,8 +1,8 @@
 import tests.funciones_comunes_UI as ui
 import tests.funciones_comunes_cotizador as com_cot
 
-from . import (QDialog, QLabel, QLineEdit, Callable, Ventana, RegistroDeCosto, QComboBox,
-DialogCrearRegistros, cotizador, Material, ManoDeObra, ventana_cotizador, NivelDeDificultad,
+from . import (QDialog, QLabel, QLineEdit, Callable, Ventana, RegistroDeCosto, QComboBox, QWidget, QLayout, QFileDialog,
+DialogCrearRegistros, cotizador, Material, ManoDeObra, ventana_cotizador, NivelDeDificultad, 
 nivelDeDificultadBajo, nivelDeDificultadMedio, nivelDeDificultadAlto, nivelDeDificultadMuyAlto, nivelDeDificultadEspeciales)
 
 
@@ -241,7 +241,8 @@ def verificarQueAlCambiarElPrecioDeVariosRegistrosSeModificanSusPreciosEnElArchi
     ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana, lista_registros_modificada, 
                                 acero_2, Material(acero_2.nombre, acero_2.densidad_str(), "33"))
 
-    verificarQueAlGuardarCambiosLasListasDeRegistrosYElContenidoDelArchivoSeaElEsperado(ventana, archivo, lista_registros_modificada)
+    verificarQueAlGuardarCambiosLasListasDeRegistrosYElContenidoDelArchivoSeaElEsperado(ventana, archivo, 
+                                                                                        lista_registros_modificada)
 
 def test_08_VentanaModificarElPrecioDeVariosRegistrosModificaSuPrecioEnElArchivo(qtbot, tmpdir, monkeypatch):
     
@@ -266,19 +267,6 @@ def test_09_VentanaGuardarCambiosReseteaTodosLosPrecios(qtbot, tmpdir, monkeypat
             lambda ventana, archivo: 
             verificarQueSeReseteenLosInputsAlGuardarCambios(ventana, archivo))
 
-# def yyy(qtbot, ventana:Ventana):
-#     breakpoint()
-#     ventana.empezarCotizacion()
-#     qtbot.wait(10)
-    
-#     assert ventana.layout_general.count() == 0
-
-# No se puede porque empezar a cotizar agrega sus propios widgets y layouts
-
-# def test_10_VentanaEmpezarCotizacionBorraTodo(qtbot, tmpdir, monkeypatch): #????? #fijarse si están borrados los layouts
-#     abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
-#             lambda ventana, archivo: 
-#             yyy(qtbot, ventana))
 
 def ingresarInputsYCotizar(ventana:Ventana, input_altura:str, input_volumen:str, input_distancia_centros:str, 
                            input_ancho_mitad:str, indice_desicion_mascaras_troqueles:int, 
@@ -301,7 +289,7 @@ def ingresarInputsYCotizar(ventana:Ventana, input_altura:str, input_volumen:str,
     ventana.input_prensamangas.setCurrentIndex(index_material_prensamangas)
 
     ventana.opcion_nivel_bajo.setChecked(hay_opcion_elegida)
-
+    #if (ventana.lista_registros[0].tieneComoNombre("Aluminio 5083")): breakpoint()
     ventana.cotizar()
 
 
@@ -338,7 +326,7 @@ def verificarLanzamientoDeErrorAlIngresarAlturaInvalida(ventana:Ventana):
                                                 
 
 
-def test_11_NoSePuedeCotizarConAlturaDelEnvaseInvalida(qtbot, tmpdir, monkeypatch):
+def test_10_NoSePuedeCotizarConAlturaDelEnvaseInvalida(qtbot, tmpdir, monkeypatch):
     ui.abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
             lambda ventana, archivo: 
            verificarLanzamientoDeErrorAlIngresarAlturaInvalida(ventana))
@@ -347,18 +335,18 @@ def verificarLanzamientoDeErrorAlIngresarVolumenInvalido(ventana:Ventana):
     verificarLanzamientoDeErrorAlIngresarMedidaInvalida(ventana, "10", "-10", "10", "10", 
                                           cotizador.volumenDeEnvaseInvalidoDescripcionDeError("-10"))
 
-def test_12_NoSePuedeCotizarConAlturaDelEnvaseInvalida(qtbot, tmpdir, monkeypatch):
+def test_11_NoSePuedeCotizarConAlturaDelEnvaseInvalida(qtbot, tmpdir, monkeypatch):
     ui.abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
             lambda ventana, archivo: 
            verificarLanzamientoDeErrorAlIngresarVolumenInvalido(ventana))
     
-def test_13_NoSePuedeCotizarConDistanciaEntreCentrosDelEnvaseInvalida(qtbot, tmpdir, monkeypatch):
+def test_12_NoSePuedeCotizarConDistanciaEntreCentrosDelEnvaseInvalida(qtbot, tmpdir, monkeypatch):
     ui.abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
             lambda ventana, archivo: 
            verificarLanzamientoDeErrorAlIngresarMedidaInvalida(ventana, "10", "10", "1,", "10", 
                                                  cotizador.distanciaEntreCentrosInvalidaDescripcionDeError("1,")))
     
-def test_14_NoSePuedeCotizarConAnchoPorMitadDelMoldeInvalida(qtbot, tmpdir, monkeypatch):
+def test_13_NoSePuedeCotizarConAnchoPorMitadDelMoldeInvalida(qtbot, tmpdir, monkeypatch):
     ui.abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
             lambda ventana, archivo: 
            verificarLanzamientoDeErrorAlIngresarMedidaInvalida(ventana, "10", "10", "10", "0", 
@@ -369,7 +357,7 @@ def verificarLanzamientoDeErrorAlNoElegirNivelDeDificultad(ventana:Ventana):
                             cotizador.NoSeEligioUnNivelDeDificultadDelEnvaseDescripcionDeError())
     
 
-def test_15_NoSePuedeCotizarSinNivelDeDificultadDelEnvaseElegido(qtbot, tmpdir, monkeypatch):
+def test_14_NoSePuedeCotizarSinNivelDeDificultadDelEnvaseElegido(qtbot, tmpdir, monkeypatch):
     ui.abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
             lambda ventana, archivo: 
            verificarLanzamientoDeErrorAlNoElegirNivelDeDificultad(ventana))
@@ -392,12 +380,12 @@ def verificarQueMenusDesplegablesMuestrenMaterialesRegistrados(ventana:Ventana):
     assert lista_nombres_materiales == pasarContenidoComboBoxAListaStrings(ventana.input_placas_respaldo)
     assert lista_nombres_materiales == pasarContenidoComboBoxAListaStrings(ventana.input_prensamangas)
 
-def test_16_VerificarQueLosComboBoxDeLosMaterialesAElegirMuestrenLosMaterialesCorrectos(qtbot, tmpdir, monkeypatch):
+def test_15_VerificarQueLosComboBoxDeLosMaterialesAElegirMuestrenLosMaterialesCorrectos(qtbot, tmpdir, monkeypatch):
     ui.abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
             lambda ventana, archivo: verificarQueMenusDesplegablesMuestrenMaterialesRegistrados(ventana))
 
 
-def obtener_widgets(layout):
+def obtener_widgets_layout(layout:QLayout) -> list[QWidget]:
     widgets = []
 
     for i in range(layout.count()):
@@ -407,18 +395,34 @@ def obtener_widgets(layout):
             widgets.append(item.widget())
 
         elif item.layout():
-            widgets.extend(obtener_widgets(item.layout()))
+            widgets.extend(obtener_widgets_layout(item.layout()))
 
     return widgets
+
+def obtener_labels_layout(layout:QLayout) -> list[QWidget]:
+    labels = []
+
+    for i in range(layout.count()):
+        item = layout.itemAt(i)
+
+        if item.widget():
+            if isinstance(item.widget(), QLabel):
+                labels.append(item.widget())
+
+        elif item.layout():
+            labels.extend(obtener_labels_layout(item.layout()))
+
+    return labels
 
 
 def verificarQueSeMuestrenCorrectamenteLosResultadosDeCotizacionConLosMaterialesElegidos(ventana:Ventana, 
                                                     material_post_cuerpo:Material, material_post_cuello:Material, 
         material_post_fondo:Material, mat_placas_respaldo:Material, material_post_prensamangas:Material):
     
-    hijos = obtener_widgets(ventana.layout_general)
-               
-    assert len(hijos) == 1
+    hijos = obtener_widgets_layout(ventana.layout_general)
+                
+                             # boton guardar
+    assert len(hijos) == 1 + 1
     assert type(hijos[0]) == QLabel
 
     hijo_datos = hijos[0].text()
@@ -453,8 +457,117 @@ def verificarQueResultadoCotizacionSeaCorrectoColocandoUnSoloAluminio5083(ventan
                                                 primer_material, primer_material, primer_material, primer_material)
 
 
-def test_18_TestParaBuscarErrorColocarUnSoloAluminio5083(qtbot, tmpdir, monkeypatch):
+#Lo saqué porque depende del cálculo de cotización
+
+# def yyy(ventana:Ventana, archivo:str):
+
+#     #verificarQueAlCambiarElPrecioDeVariosRegistrosSeModificanSusPreciosEnElArchivo(ventana, archivo)
+#     lista_registros_modificada = com_cot.lista_registros_aceptada.copy()
+
+#     acero:Material = com_cot.lista_registros_aceptada[1]
+
+#     ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana, lista_registros_modificada, 
+#                                                                 acero, Material(acero.nombre, acero.densidad_str(), "34"))
+    
+#     ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana, lista_registros_modificada, 
+#                                                                                  ManoDeObra_aceptada, ManoDeObra("42"))
+    
+#     acero_2:Material = com_cot.lista_registros_aceptada[2]
+#     ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana, lista_registros_modificada, 
+#                                 acero_2, Material(acero_2.nombre, acero_2.densidad_str(), "33"))
+
+#     verificarQueAlGuardarCambiosLasListasDeRegistrosYElContenidoDelArchivoSeaElEsperado(ventana, archivo, 
+#                                                                                         lista_registros_modificada)
+#     #fin funcion
+
+#     #funcion
+#     ventana.empezarCotizacion()
+
+#     lista_nombres_materiales = pasarListaRegistrosAListaNombresMateriales(lista_registros_modificada)
+
+#     assert lista_nombres_materiales == pasarContenidoComboBoxAListaStrings(ventana.input_postizos_cuerpo)
+#     assert lista_nombres_materiales == pasarContenidoComboBoxAListaStrings(ventana.input_postizos_cuello)
+#     assert lista_nombres_materiales == pasarContenidoComboBoxAListaStrings(ventana.input_postizos_fondo)
+#     assert lista_nombres_materiales == pasarContenidoComboBoxAListaStrings(ventana.input_placas_respaldo)
+#     assert lista_nombres_materiales == pasarContenidoComboBoxAListaStrings(ventana.input_prensamangas)
+
+#     #fin funcion 
+
+#     #verificarQueResultadoCotizacionSeaCorrectoColocandoUnSoloAluminio5083
+#     ingresarInputsYCotizar(ventana, "10", "10", "10", "10", 0, 2, 0, 0, 0, 0, True)
+
+#     primer_material = lista_registros_modificada[0]
+#     acero_2 = lista_registros_modificada[2]
+
+#     verificarQueSeMuestrenCorrectamenteLosResultadosDeCotizacionConLosMaterialesElegidos(ventana, acero_2, 
+#                                                 primer_material, primer_material, primer_material, primer_material)
+
+
+# def test_18_xxx(qtbot, tmpdir, monkeypatch):
+#     ui.abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
+#             lambda ventana, archivo: yyy(ventana, archivo))
+
+
+
+def verificarQueElResultadoDeCotizacionSeGuardeCorrectamente(ventana, tmpdir, monkeypatch):
+
+    verificarQueLosResultadosDeLaCotizacionSeMuestrenCorrectamente(ventana)
+
+    lista_labels:list[QWidget] = obtener_labels_layout(ventana.layout_general)
+    
+    impresion_resultado = lista_labels[0].text() 
+
+    impresion_resultado = cotizador.cotizarEnBaseA(1, 1, True, 10, 10, 10, 10, nivelDeDificultadBajo,
+        ventana.lista_materiales[0], ventana.lista_materiales[0], ventana.lista_materiales[0], 
+        ventana.lista_materiales[0], ventana.lista_materiales[0], com_cot.lista_materiales_aceptada, 
+        com_cot.mano_de_obra_aceptada).imprimirResultado()
+
+    def mock_getSaveFileName(dialog_self, como_guardar_archivo:str, carpeta_inicial:str, filtros_iniciales:str):
+
+        return (tmpdir/"archivito.txt", "Archivos de Texto (*.txt)")
+
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", mock_getSaveFileName)
+
+    ventana.guardarEnArchivo()
+
+    com_cot.assertarContenidoDeArchivoEsElEsperado(tmpdir/"archivito.txt", impresion_resultado.splitlines(keepends=True))
+
+
+def test_19_VentanaResultadoDeCotizacionSeGuardaCorrectamente(qtbot, tmpdir, monkeypatch):
+    ui.abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
+            lambda ventana, archivo: verificarQueElResultadoDeCotizacionSeGuardeCorrectamente(ventana, tmpdir, monkeypatch))
+
+
+
+
+def test_TestParaBuscarErrorColocarUnSoloAluminio5083(qtbot, tmpdir, monkeypatch):
     ui.abrirVentanaLeyendoDeArchivoConRegistrosAceptadosYRealizar(qtbot, tmpdir, monkeypatch,                                     
             lambda ventana, archivo: verificarQueResultadoCotizacionSeaCorrectoColocandoUnSoloAluminio5083(ventana))
 
  
+def test_TestParaBuscarErrorConArchivoPreciosReal(qtbot, tmpdir, monkeypatch):
+
+    contenido = """Aluminio 5083,2.8,19.0
+Aluminio 6061,2.8,21.5
+Aluminio 7075,2.8,23.5
+Acero Amutit,8.0,7.5
+Acero Especial K,8.0,11.0
+Acero Inoxidable,8.0,16.0
+Acero SAE 4140,8.0,6.0
+Cobre Berilio,9.0,110.0
+Mano de obra,35.0"""
+
+    archivo = ui.crearArchivoConContenido(tmpdir, "archivo_registros.txt", contenido)
+
+    ventana = ui.crearVentanaParaTestLeyendoDeArchivo(qtbot, archivo, monkeypatch)
+
+    #breakpoint()
+    #verificarQueResultadoCotizacionSeaCorrectoColocandoUnSoloAluminio5083(ventana)
+
+    ingresarInputsYCotizar(ventana, "10", "10", "10", "10", 0, 0, 1, 1, 1, 1, True)
+
+    primer_material = Material("Aluminio 6061", "2.8", "21.5")
+    aluminio_5083 = Material("Aluminio 5083", "2.8", "19.0")
+
+    verificarQueSeMuestrenCorrectamenteLosResultadosDeCotizacionConLosMaterialesElegidos(ventana, aluminio_5083, 
+                                                primer_material, primer_material, primer_material, primer_material)

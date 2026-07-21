@@ -481,7 +481,7 @@ Costos de cada material (total: {self.costo_mat:.2f} US$): \n'''
 
         info_a_imprimir = info_a_imprimir+f'''\nElementos STD, tornilleria, o'rings, etc: {self.gastos_varios} US$\n
 HORAS DE TRABAJO: {self.horas_trabajo}hs\n
-PRECIO TOTAL: {self.precio_total} US$\n'''
+PRECIO TOTAL: {self.precio_total} US$'''
         
         return info_a_imprimir
 

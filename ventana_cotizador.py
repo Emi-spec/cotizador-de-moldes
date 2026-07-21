@@ -2,7 +2,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QLabel, #para imprimir texto
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox,
     QPushButton, QDialog, QApplication, QSizePolicy, QComboBox, QRadioButton,
-    QLineEdit) 
+    QLineEdit, QFileDialog) 
 
 import os
 
@@ -10,9 +10,10 @@ from collections.abc import Callable
 import cotizador_para_moldes_de_soplado as cotizador
 from cotizador_para_moldes_de_soplado import (Material, ManoDeObra, RegistroDeCosto, NivelDeDificultad,
             nivelDeDificultadBajo, nivelDeDificultadMedio, nivelDeDificultadAlto, nivelDeDificultadMuyAlto, 
-            nivelDeDificultadEspeciales)
+            nivelDeDificultadEspeciales, ResultadoCotizacion)
 
-ARCHIVO_REGISTROS = "nada.txt"
+ARCHIVO_REGISTROS = "precios.txt"
+
 
 def esMedidaValida(medida_en_str:str):
     if(cotizador.es_float_estricto(medida_en_str)):
@@ -39,6 +40,16 @@ def crearBoton(texto:str, accionProducidaPorBoton:Callable[[], None]):
         boton.clicked.connect(accionProducidaPorBoton)
 
         return boton
+
+def seleccionarMateriales(lista_registros:list[RegistroDeCosto]) -> list[Material]:
+    
+    lista_materiales:list[Material] = []
+    
+    for registro in lista_registros:
+        if (registro.esMaterial()):
+            lista_materiales.append(registro)
+
+    return lista_materiales
 
 class Ventana(QMainWindow):
     def __init__(self):
@@ -241,6 +252,7 @@ class Ventana(QMainWindow):
 
     def AsignarInputsDeEleccionDeMaterialesAlLayout(self, layout_padre:QGridLayout):
                 
+        self.lista_materiales:list[Material] = [registro for registro in self.lista_registros if registro.esMaterial()]
         lista_nombre_materiales:list[str] = [registro.nombre for registro in self.lista_registros if registro.esMaterial()]
              
         #postizos de cuerpo 
@@ -390,13 +402,17 @@ class Ventana(QMainWindow):
             material_placas_respaldo:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_placas_respaldo)
             material_prensamangas:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_prensamangas)  
 
-            for registro in self.lista_registros:
-                if(registro.esManoDeObra()):
-                    mano_de_obra:ManoDeObra = registro
+            mano_de_obra:ManoDeObra = None
 
-            lista_materiales:list[Material] = [material for material in self.lista_registros if registro.esMaterial()]
-            
-            resultado_cotizacion = cotizador.cotizarEnBaseA(int(self.input_cantidad_moldes.currentText()), 
+            #breakpoint()
+            for registro in self.lista_registros:
+                if (registro.esManoDeObra()):
+                    mano_de_obra = registro
+
+            lista_materiales:list[Material] = seleccionarMateriales(self.lista_registros)
+
+
+            self.resultado_cotizacion = cotizador.cotizarEnBaseA(int(self.input_cantidad_moldes.currentText()), 
                                     int(self.input_cantidad_cavidades.currentText()),
                                     mascaras_troqueles,
                                     float(self.input_altura_envase.text()),
@@ -406,18 +422,71 @@ class Ventana(QMainWindow):
                                     dificultad,
                                     material_postizos_cuerpo,
                                     material_postizos_cuello,
-                                    material_postizos_fondo, 
+                                    material_postizos_fondo,    
                                     material_placas_respaldo, 
                                     material_prensamangas,
                                     lista_materiales,
                                     mano_de_obra)
             
+            #breakpoint()
             self.limpiar_layout(self.layout_general) 
 
-            resultados_impresos = QLabel(resultado_cotizacion.imprimirResultado())
+            resultados_impresos = QLabel(self.resultado_cotizacion.imprimirResultado())
 
             self.layout_general.addWidget(resultados_impresos)
+
+            #layout_guardar_archivo = QHBoxLayout()
+            
+            #label_guardar_en_archivo = QLabel("Guardar en archivo")
+            #self.input_nombre_archivo = crearLineEdit("nombre archivo")
+            #extension_txt = QLabel(".txt") 
+            boton_guardar_en_archivo = crearBoton("guardar", self.guardarEnArchivo)
+            self.layout_general.addWidget(boton_guardar_en_archivo)
+
+            #layout_guardar_archivo.addWidget(label_guardar_en_archivo)
+            #layout_guardar_archivo.addWidget(self.input_nombre_archivo)
+            #layout_guardar_archivo.addWidget(extension_txt)
+            #layout_guardar_archivo.addWidget(boton_guardar_en_archivo)
+            
+            #self.layout_general.addLayout(layout_guardar_archivo)
         
+    def elNombreDelArchivoNoPuedeSerNuloDescripcionDeError(self) -> str:
+        return "El nombre del archivo no puede estar vacío"
+
+    def guardarEnArchivo(self):
+        
+        #if(self.input_nombre_archivo.text() == ""):
+        #    self.ejecutarDialogDeErrorConDescripcion(self.elNombreDelArchivoNoPuedeSerNuloDescripcionDeError())
+
+        #else:
+            # archivo = open( + ".txt", "w")
+
+            # archivo.write(self.resultado_cotizacion.imprimirResultado())
+
+            # archivo.close()
+
+        archivo, filtro = QFileDialog.getSaveFileName(
+        self, 
+        "Guardar archivo como", 
+        ".", # Carpeta inicial
+        "Archivos de texto (*.txt);;Todos los archivos (*.*)"
+        )
+
+        if archivo:
+            #try:
+                # Escribir el contenido en el archivo seleccionado
+            with open(archivo, 'w', encoding='utf-8') as f:
+                f.write(self.resultado_cotizacion.imprimirResultado())
+                #     print(f"Archivo guardado exitosamente en: {archivo}")
+                # except Exception as e:
+                #     print(f"Error al guardar el archivo: {e}")
+
+            # self.dialog_guardar_archivo = QFileDialog(self)
+            # #self.dialog_guardar_archivo.setFileMode(QFileDialog.AnyFile)
+            # #self.dialog_
+
+            # if self.dialog_guardar_archivo.exec():
+            #     nombre_archivo = self.dialog_guardar_archivo.selectedFiles()
 
     def cargar_lista_registros(self, nombre_archivo:str):
         try: 

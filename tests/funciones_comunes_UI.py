@@ -1,4 +1,4 @@
-from . import (QDialog, QLabel, Callable, Ventana, RegistroDeCosto, DialogDescripcionDeError,
+from . import (QDialog, QLabel, Callable, Ventana, RegistroDeCosto, DialogDescripcionDeError, QFileDialog, 
 DialogCrearRegistros, cotizador, Material, ManoDeObra, ventana_cotizador)
 
 import tests.funciones_comunes_cotizador as com_cot
