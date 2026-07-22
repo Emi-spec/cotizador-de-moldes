@@ -67,6 +67,20 @@ def imprimir_letras_mat():
             print(letra+") "+tupla[0])
     print("")
 
+def crear_texto_registro_materiales(dic_materiales:dict[str,tuple[str,float,float]]) -> str:
+    texto:str = "" 
+    texto = texto+"REGISTRO DE MATERIALES\n"
+
+    for letra,tupla in dic_materiales.items(): #presenta la en la posicion donde estaba en el diccionario 
+        if letra == "M":
+            texto = texto+"\nM) Valor de hora para molde soplado:   "+str(tupla[2])+" US$\n"
+        else:    
+            texto = texto+letra+") Valor del "+tupla[0]+" :   "+str(tupla[2])+" US$\n"
+    
+    texto+"____________________\n"
+
+    return texto
+
 
 
 #COMIENZO PROGRAMA
@@ -149,13 +163,15 @@ for linea in lineas_archivo: #requisito que el archivo tenga todo escrito de la 
 
     dic_materiales[letra]=(material,float(densidad),float(precio))
 
-print("REGISTRO DE MATERIALES")
-for letra,tupla in dic_materiales.items(): #presenta la en la posicion donde estaba en el diccionario 
-    if letra == "M":
-        print("\nM) Valor de hora para molde soplado:   ",tupla[2],"US$")
-    else:    
-        print(letra+") Valor del",tupla[0]+":   "+str(tupla[2]),"US$")
-print("____________________\n")
+print(crear_texto_registro_materiales(dic_materiales))
+
+# print("REGISTRO DE MATERIALES")
+# for letra,tupla in dic_materiales.items(): #presenta la en la posicion donde estaba en el diccionario 
+#     if letra == "M":
+#         print("\nM) Valor de hora para molde soplado:   ",tupla[2],"US$")
+#     else:    
+#         print(letra+") Valor del",tupla[0]+":   "+str(tupla[2]),"US$")
+# print("____________________\n")
 
 #PARA CAMBIAR ALGUN PRECIO/MATERIAL MAL ESCRITO/AGREGAR NUEVOS/ELIMINAR
 # verificar claves debe cambiar de acuerdo a cuantos materiales haya (u opciones).  
