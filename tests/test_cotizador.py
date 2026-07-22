@@ -43,14 +43,6 @@ def assertarMaterialesRegistradosCorrectamente(archivo:str, registros_esperados:
     com_cot.assertarContenidoDeArchivoEsElEsperado(archivo, contenido_esperado)
 
 
-# def assertarQueNoSeRegistroMaterialInvalidoEnArchivoVacio(tmpdir,
-#                                             nombre_material:str, densidad_material:str, precio_material:str,
-#                                             tipo_de_error, descripcion_de_error_esperada:str):
-
-#     assertarQueNoSeRegistroMaterialInvalidoEnArchivo(tmpdir, "archivo_vacio.txt", "", nombre_material, densidad_material,
-#                                                      precio_material, tipo_de_error, lambda archivo: descripcion_de_error_esperada, [])
-
-
 def assertarQueNoSeRegistroMaterialEnArchivo(tmpdir,
                                             nombre_archivo:str, contenido:str, material:Material,
                                             tipo_de_error, descripcion_de_error_esperada:Callable[[str],str],
@@ -179,11 +171,6 @@ def test_05_3_noCreListaSinRegistroDeManoDeObra(tmpdir):
                                                                                 ValueError,
                             lambda archivo: cotizador.debeHaberAlMenosUnRegistroManoDeObraDescripcionDeError(archivo))
 
-     # assertarLevantamientoErrorMatcheandoDescripcion(tmpdir,
-    #                                         "sin_mano_de_obra.txt",
-    #                                         registro_sin_mano_de_obra,
-    #                                         ValueError,
-    #                                         "debe haber al menos un registro de mano de obra")
 
 def test_05_4_noCreaListaSinAluminio5083(tmpdir):
     lista_registros_sin_aluminio_5083 = [Material("Aluminio 7075","2.8","23.50"), Material("Acero Amutit","8","7.5"),
@@ -196,12 +183,6 @@ def test_05_4_noCreaListaSinAluminio5083(tmpdir):
 
 
 #falta noCreaListaSinAlMenosUnMaterial pero alta paja hacerlo, ya está cubierto
-
-# com_cot.lista_registros_aceptada:list[RegistroDeCosto] = [Material("Aluminio 7075", "2.8", "23.50"),
-#                                                   Material("Aluminio 5083", "3", "4.5"), 
-#                                                   Material("Acero Amutit", "8", "7.5"),
-#                                                   ManoDeObra("35"),
-#                                                   Material("Acero Especial K", 8, 11)]
 
 def test_06_creaListaDeVariosMateriales(tmpdir):
 
@@ -451,18 +432,18 @@ def test_25_NoSePuedeCotizarConAlturaInvalida():
 
 #     cotizarConListaRegistroAceptada(1, 1, 100, input_volumen_invalido, 100, 100)
 
-# def test_26_NoSePuedeCotizarConVolumenInvalido():
-#     assertarLevantamientoDeErrorAlEjecutarFuncion(ValueError, lambda: cotizarConInputAlturaInvalida(0),
-#                                                   cotizador.alturaDeEnvaseInvalidaDescripcionDeError(0))
+def test_26_NoSePuedeCotizarConVolumenInvalido():
+    assertarLevantamientoDeErrorAlEjecutarFuncion(ValueError, lambda: cotizarConInputAlturaInvalida(0),
+                                                  cotizador.alturaDeEnvaseInvalidaDescripcionDeError(0))
 
-#     assertarLevantamientoDeErrorAlEjecutarFuncion(ValueError, lambda: cotizarConInputAlturaInvalida(-11),
-#                                                   cotizador.alturaDeEnvaseInvalidaDescripcionDeError(-11))
+    assertarLevantamientoDeErrorAlEjecutarFuncion(ValueError, lambda: cotizarConInputAlturaInvalida(-11),
+                                                  cotizador.alturaDeEnvaseInvalidaDescripcionDeError(-11))
 
-#     assertarLevantamientoDeErrorAlEjecutarFuncion(TypeError, lambda: cotizarConInputAlturaInvalida("1"),
-#                                                   cotizador.alturaDeEnvaseInvalidaDescripcionDeError("1"))
+    assertarLevantamientoDeErrorAlEjecutarFuncion(TypeError, lambda: cotizarConInputAlturaInvalida("1"),
+                                                  cotizador.alturaDeEnvaseInvalidaDescripcionDeError("1"))
 
-#     assertarLevantamientoDeErrorAlEjecutarFuncion(TypeError, lambda: cotizarConInputAlturaInvalida("-"),
-#                                                   cotizador.alturaDeEnvaseInvalidaDescripcionDeError("-"))
+    assertarLevantamientoDeErrorAlEjecutarFuncion(TypeError, lambda: cotizarConInputAlturaInvalida("-"),
+                                                  cotizador.alturaDeEnvaseInvalidaDescripcionDeError("-"))
 
 #no hago estos tests y directamente pongo las verificaciones en el código
 

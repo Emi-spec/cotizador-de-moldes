@@ -47,14 +47,6 @@ def assertarContenidoDeArchivoEsElEsperado(archivo:str, contenido_esperado:list[
     lineas_archivo:list[str] = archivo_modificado.readlines()
     archivo_modificado.close() #CERRE EL ARCHIVO
 
-    # registros_esperados:list[str] = []
-
-    # for linea in contenido_esperado[:-1]: 
-    #     registros_esperados.append(linea[:-2])
-
-    # registros_esperados.append(contenido_esperado[-1])
-    #breakpoint()
-    #chequeo de correctamente identado(?)
     verificarSaltosDeLineaCorrectos(lineas_archivo)
 
     registros_archivo = extraerRegistrosSinSaltosDeLinea(lineas_archivo)
@@ -65,7 +57,6 @@ def assertarContenidoDeArchivoEsElEsperado(archivo:str, contenido_esperado:list[
 
     assert len(registros_archivo) == len(registros_esperados)
 
-    # assert lineas_archivo == contenido_esperado
 
 def pasarListaRegistrosATexto(lista_registros:list[RegistroDeCosto]) -> str:
     contenido_archivo_esperado:str = ""

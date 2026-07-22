@@ -74,7 +74,8 @@ def verificarQueSeMuestranLosMaterialesAgregados(ventana, materiales_agregados_e
 
 def ingresarInputPrecioModificadoYCambiarElPrecioDelRegistroEnLaListaDeRegistros(ventana:Ventana, 
                                                         lista_registros:list[RegistroDeCosto],registro:RegistroDeCosto, 
-        registro_con_precio_modificado:RegistroDeCosto):
+                                                        registro_con_precio_modificado:RegistroDeCosto):
+    
     ventana.input_precios[registro].setText(registro_con_precio_modificado.precio_str())
     indice_registro = lista_registros.index(registro)
     lista_registros[indice_registro] = registro_con_precio_modificado
