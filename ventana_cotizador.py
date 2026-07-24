@@ -155,6 +155,7 @@ class Ventana(QMainWindow):
                     registro.agregarseALaListaConElPrecioModificado(self, indice, precio_a_modificar)
             
             self.limpiar_layout(self.layout_materiales_registrados)
+            self.agregarSeccionesCaracteristicasMaterial()
             self.cargarMaterialesRegistradosEInputsPrecios()
 
             cotizador.limpiarArchivoYRegistrarListaRegistros(self.lista_registros, ARCHIVO_REGISTROS)
@@ -389,13 +390,6 @@ class Ventana(QMainWindow):
             if(self.opcion_nivel_especiales.isChecked()):
                 dificultad = nivelDeDificultadEspeciales
 
-            #opciones de materiales
-            # nombre = self.input_postizos_cuerpo().currentText() 
-
-            # for material in self.lista_registros:
-            #     if(material.tieneComoNombre(nombre)):
-            #         material_postizos_cuerpo = material
-            #breakpoint()
             material_postizos_cuerpo:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_postizos_cuerpo) 
             material_postizos_cuello:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_postizos_cuello)
             material_postizos_fondo:Material = self.seleccionarMaterialDelMenuDesplegable(self.input_postizos_fondo)
@@ -404,7 +398,6 @@ class Ventana(QMainWindow):
 
             mano_de_obra:ManoDeObra = None
 
-            #breakpoint()
             for registro in self.lista_registros:
                 if (registro.esManoDeObra()):
                     mano_de_obra = registro
@@ -428,7 +421,6 @@ class Ventana(QMainWindow):
                                     lista_materiales,
                                     mano_de_obra)
             
-            #breakpoint()
             self.limpiar_layout(self.layout_general) 
 
             resultados_impresos = QLabel(self.resultado_cotizacion.imprimirResultado())

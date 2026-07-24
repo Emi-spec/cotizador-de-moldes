@@ -188,6 +188,10 @@ def verificarQueAlGuardarCambiosLasListasDeRegistrosYElContenidoDelArchivoSeaElE
                                                                     lista_registros_modificada:list[RegistroDeCosto]):
     ventana.guardarCambios()
 
+    lista_widgets:list[QWidget] = obtener_widgets_layout(ventana.layout_materiales_registrados)
+                                     #materiales y carac                   #mano de obra #secciones
+    assert len(lista_widgets) == (len(lista_registros_modificada)-1) * 3    + 2          + 3 
+
     assert ventana.lista_registros == lista_registros_modificada
 
     for registro in ventana.input_precios.keys():
