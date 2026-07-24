@@ -4,3 +4,9 @@ NO USAR (solo para activar uno nuevo)-> python3 -m venv cotizador
 
 source cotizador/bin/activate
 
+
+WINDOWS
+
+para activar uno nuevo ->  py -3.12 -m venv venv
+
+.\venv\Scripts\Activate.ps1

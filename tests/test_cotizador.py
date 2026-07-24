@@ -1,5 +1,6 @@
 #faltan tests más simples porque alta paja hacerlos
 import tests.funciones_comunes_cotizador as com_cot
+import re
 
 from . import (pytest, Callable, RegistroDeCosto, cotizador, Material, ManoDeObra)
 
@@ -85,7 +86,12 @@ def verificarQueSeRegistrenLosMaterialesCorrectamente(tmpdir, nombre_archivo:str
 def assertarLevantamientoErrorMatcheandoDescripcion(tmpdir, nombre_archivo:str, contenido:str, tipo_de_error, descripcion_de_error_esperada:str):
     archivo = com_cot.crearArchivoConContenido(tmpdir, nombre_archivo, contenido)
 
-    with pytest.raises(tipo_de_error, match= f".*{descripcion_de_error_esperada}.* {tmpdir}/{nombre_archivo}") as excinfo:
+    patron = (
+    rf".*{re.escape(descripcion_de_error_esperada)}.*"
+    rf"{re.escape(str(tmpdir / nombre_archivo))}"
+    )
+
+    with pytest.raises(tipo_de_error, match= patron) as excinfo:
         #para que el patrón regex matchee debe aparece exactamente el string descripcion_de_error esperada dentro del mensaje
         cotizador.crear_lista_registros_a_partir_de(archivo)
 
